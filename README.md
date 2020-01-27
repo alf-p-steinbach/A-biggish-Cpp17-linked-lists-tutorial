@@ -1767,6 +1767,7 @@ The `double` values of section 3’s `Node` won’t do to handle these words, so
 [*<small>sorting_singly_linked/Node.hpp</small>*](source/sorting_singly_linked/Node.hpp)
 ~~~cpp
 #pragma once
+#include "../Type_.hpp"
 #include <string_view>
 
 namespace oneway_sorting_examples {

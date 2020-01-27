@@ -1,4 +1,5 @@
 ﻿#pragma once
+#include "../Type_.hpp"
 #include <string_view>
 
 namespace oneway_sorting_examples {
