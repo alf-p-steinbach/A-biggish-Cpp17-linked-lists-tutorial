@@ -1,0 +1,63 @@
+digraph G {
+    graph [fontname="Book Antiqua", style="filled, rounded"];
+    node [fontname="Book Antiqua", style="filled, rounded"];
+    edge [fontname="Book Antiqua"];
+    
+    node [shape=record, width="1.5", fillcolor="white"];
+    rankdir="LR";  compound=true;
+    
+    subgraph cluster_Nodes
+    {
+        rankdir="TB"; bgcolor="white"; penwidth=0; compound=true;
+
+        subgraph cluster_Plus1 {
+            bgcolor="cornsilk"; penwidth=1;
+            rankdir="TB";
+            label=""
+            Next1 [label=<<i>next</i>>]
+            Value1 [label=<<i>value</i> = 12>]
+        };
+
+        subgraph cluster_List
+        {
+            rankdir="LR";  compound=true;
+
+            Head [label=<<i>head</i>>]
+            Tail [shape="point", style="invis", width="0.1"]
+            
+            subgraph cluster_Plus2 {
+                bgcolor="cornsilk"; penwidth=1;
+                label=""
+                Next2 [label=<<i>next</i>>]
+                Value2 [label=<<i>value</i> = 11>]
+            };
+            subgraph cluster_Plus3 {
+                bgcolor="cornsilk"; penwidth=1;
+                label=""
+                Next3 [label=<<i>next</i>>]
+                Value3 [label=<<i>value</i> = 10>]
+            };
+            subgraph cluster_Minus1 {
+                bgcolor="cornsilk"; penwidth=1;
+                label=""
+                NextMinus1 [label=<<i>next</i>>]
+                ValuMinus1 [label=<<i>value</i> = 2>]
+            };
+            subgraph cluster_Last {
+                bgcolor="cornsilk"; penwidth=1;
+                label=""
+                NextLast [label=<<i>next</i>>]
+                ValuLast [label=<<i>value</i> = 1>]
+            };
+            Ellipsisbox [shape=plaintext, label="…", fontsize="40.0", width=""];
+            Next2 -> Next3  [lhead=cluster_Plus3];
+            Next3 -> Ellipsisbox;
+            Ellipsisbox -> NextMinus1 [lhead=cluster_Minus1];
+            NextMinus1 -> NextLast [lhead=cluster_Last];
+            NextLast -> Tail [arrowhead=tee];
+        }
+
+        Next1 -> Next2 [lhead=cluster_Plus2];
+        Head -> Next1 [lhead=cluster_Plus1];
+    }
+}

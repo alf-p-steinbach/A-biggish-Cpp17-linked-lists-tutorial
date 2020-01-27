@@ -1,0 +1,56 @@
+digraph G {
+    graph [fontname="Book Antiqua", style="filled, rounded"];
+    node [fontname="Book Antiqua", style="filled, rounded"];
+    edge [fontname="Book Antiqua"];
+    
+    rankdir="LR";
+    compound=true;
+    Head [shape="point"];
+    Tail [shape="point", style="invis"]
+    node [shape=record, width="1.5", fillcolor="white"];
+    // defstyle cluster [bgcolor="cornsilk"];
+
+    subgraph cluster_Plus1 {
+        bgcolor="cornsilk";
+        label="Node #1"
+        rankdir="UD";
+        Next1 [label=<<I>next</I>>]
+        Value1 [label="Value #1"]
+    };
+    subgraph cluster_Plus2 {
+        bgcolor="cornsilk";
+        label="Node #2"
+        rankdir="UD";
+        Next2 [label=<<I>next</I>>]
+        Value2 [label="Value #2"]
+    };
+    subgraph cluster_Plus3 {
+        bgcolor="cornsilk";
+        label="Node #3"
+        rankdir="UD";
+        Next3 [label=<<I>next</I>>]
+        Value3 [label="Value #3"]
+    };
+    subgraph cluster_Minus1 {
+        bgcolor="cornsilk";
+        label=<Node #<I>n</I>-1>
+        rankdir="UD";
+        NextMinus1 [label=<<I>next</I>>]
+        ValuMinus1 [label=<Value #<I>n</I>-1>]
+    };
+    subgraph cluster_Last {
+        bgcolor="cornsilk";
+        label=<Node #<I>n</I>>
+        rankdir="UD";
+        NextLast [label=<<I>next</I>>]
+        ValuLast [label=<Value #<I>n</I>>]
+    };
+    Ellipsisbox [shape=plaintext, label="…", fontsize="40.0", width=""];
+    Head -> Next1 [lhead=cluster_Plus1];
+    Next1 -> Next2  [lhead=cluster_Plus2];
+    Next2 -> Next3  [lhead=cluster_Plus3];
+    Next3 -> Ellipsisbox;
+    Ellipsisbox -> NextMinus1 [lhead=cluster_Minus1];
+    NextMinus1 -> NextLast [lhead=cluster_Last];
+    NextLast -> Tail [arrowhead=tee];
+}
