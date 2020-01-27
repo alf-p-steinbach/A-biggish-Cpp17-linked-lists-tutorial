@@ -2,7 +2,7 @@
 
 # A biggish C++17 linked lists tutorial
 
-*This tutorial is in mid-writing, under construction. The programming language in the examples is C++, not C as indicated by the large Github-added header above. Unfortunately, three suggested ways to get rid of it did not work.*
+*This tutorial is in mid-writing, under construction. The large header at the top is added automatically by Github. Unfortunately, three suggested ways to get rid of it did not work.*
 
 When you now learn about how to implement linked lists, remember that
 
