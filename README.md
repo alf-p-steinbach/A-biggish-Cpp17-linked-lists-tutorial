@@ -1802,7 +1802,7 @@ namespace oneway_sorting_examples {
 }  // namespace oneway_sorting_examples
 ~~~
 
-We’ll now be passing lists around, including returning them from functions, so it’s a good idea to also define a `List` type that ensures proper copying, moving and destruction. This type doesn’t need to encapsulate the inner workings of a list. We’re still learning and therefore dealing directly with raw, exposed list machinery, the inner nuts n’ bolts n’ gears, but now that machinery is at least safely fastened to a chassis, so to speak:
+We’ll now be passing lists around, including returning them from functions, so it’s a good idea to also define a `List` type that ensures proper copying, moving and destruction. This type doesn’t need to encapsulate the inner workings of a list. We’re still learning and therefore dealing directly with raw, exposed list machinery, the inner nuts ’n bolts ’n gears, but now that machinery is at least safely fastened to a chassis, so to speak:
 
 [*<small>sorting_singly_linked/List.hpp</small>*](source/sorting_singly_linked/List.hpp)
 ~~~cpp
