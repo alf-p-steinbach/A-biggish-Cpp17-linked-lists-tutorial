@@ -1944,7 +1944,7 @@ namespace oneway_sorting_examples {
 
 Finally, we should better test (not rigorously, but just, test) that this code works as intended, producing the data that we intend to randomize and then sort.
 
-[*<small>sorting_singly_linked/first_and_last_words.cpp</small>*](source/sorting_singly_linked/first_and_last_words.cpp)
+[*<small>sorting_singly_linked/english_words_list_result.cpp</small>*](source/sorting_singly_linked/english_words_list_result.cpp.cpp)
 ~~~cpp
 #include "../data/Abbreviated_list_displayer.hpp"
 using data::Abbreviated_list_displayer;
@@ -1962,7 +1962,7 @@ auto main()
     List words = english_words_list();
     const int n = int( words.count() );
     
-    cout << n << " words:" << endl;
+    cout << "`english_words_list()` produced " << n << " words:" << endl;
     Abbreviated_list_displayer displayer( cout, n );
     for( Node* p = words.head; p != nullptr; p = p->next ) {
         displayer.display( p->value );
@@ -1974,7 +1974,7 @@ auto main()
 Output, as before (but now with the data coming from a linked list):
 
 ~~~cpp
-58112 words:
+`english_words_list()` produced 58112 words:
 aardvark, aardwolf, aaron, aback, abacus, ..., zooms, zooplankton, zoos, zulu, zulus.
 ~~~
 
@@ -2116,7 +2116,7 @@ But can a linked list be shuffled in O(*n*) time without using O(*n*) extra memo
 
 To measure elapsed time modern C++ code should use the C++11 `<chrono>` header, instead of the old C `clock` function. However, as with the `<random>` header direct use of those facilities is inconvenient and verbose. For this tutorial I therefore provide a [header `"my_chrono.hpp"`](source/my_chrono.hpp) that provides an alias `my_chrono::Timer_clock`, a function `my_chrono::as_seconds` that produces an ordinary `double` value, and ditto functions for milliseconds, microseconds and nanoseconds.
 
-[*<small>sorting_singly_linked/first_and_last_words.merge-shuffled.cpp</small>*](source/sorting_singly_linked/first_and_last_words.merge-shuffled.cpp)
+[*<small>sorting_singly_linked/merge_shuffle_result.cpp</small>*](source/sorting_singly_linked/merge_shuffle_result.cpp)
 ~~~cpp
 #include "../my_chrono.hpp"
 #include "../my_random.hpp"
@@ -2194,7 +2194,7 @@ The simple idea of O(*n*) array shuffling, known as the [Fisher-Yates shuffle](h
 
 Instead of implementing array shuffling oneself, as in the code below, for professional work one would just use the standard library’s implementation `std::shuffle`. There is no corresponding `std::forward_list::shuffle`. The standard library is pretty array-oriented, supportive of arrays rather than linked lists.
 
-[*<small>sorting_singly_linked/first_and_last_words.array_shuffled.cpp</small>*](source/sorting_singly_linked/first_and_last_words.array_shuffled.cpp)
+[*<small>sorting_singly_linked/array_shuffle_result.cpp</small>*](source/sorting_singly_linked/array_shuffle_result.cpp)
 ~~~cpp
 #include "../data/english_words_iteration.hpp"
 #include "../data/Abbreviated_list_displayer.hpp"
@@ -2353,7 +2353,7 @@ Compared to the roughly 0.012 seconds for the linked list merge shuffle with g++
 
 The sorting examples will use a common function that produces a shuffled list:
 
-[*<small>sorting_singly_linked/shuffled_english_words_list.cpp</small>*](source/sorting_singly_linked/shuffled_english_words_list.cpp)
+[*<small>sorting_singly_linked/shuffled_english_words_list.hpp</small>*](source/sorting_singly_linked/shuffled_english_words_list.hpp)
 ~~~cpp
 #pragma once
 #include "../my_random.hpp"

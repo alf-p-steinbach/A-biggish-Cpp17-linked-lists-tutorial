@@ -14,7 +14,7 @@ auto main()
     List words = english_words_list();
     const int n = int( words.count() );
     
-    cout << n << " words:" << endl;
+    cout << "`english_words_list()` produced " << n << " words:" << endl;
     Abbreviated_list_displayer displayer( cout, n );
     for( Node* p = words.head; p != nullptr; p = p->next ) {
         displayer.display( p->value );
