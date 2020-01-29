@@ -2172,7 +2172,7 @@ Still it doesn’t hurt to check if e.g. 11 consecutive runs produce similar tim
 [X:\source\sorting_singly_linked]
 > for /L %x in (1,1,11) do @(a>nul)
 0.015972 seconds.
-0.01599 seconds.
+0.015990 seconds.
 0.011994 seconds.
 0.011993 seconds.
 0.012992 seconds.
