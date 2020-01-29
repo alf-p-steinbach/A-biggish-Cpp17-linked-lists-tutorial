@@ -15,7 +15,9 @@ using Index = Size;
 #include <vector>           // std::vector
 #include <string_view>      // std::string_view
 #include <utility>          // std::swap
-using std::vector, std::string_view, std::swap, std::cout, std::clog, std::endl;
+using
+    std::vector, std::string_view, std::swap,
+    std::fixed, std::cout, std::clog, std::endl;
 
 auto english_words_vector()
     -> vector<string_view>
@@ -58,7 +60,7 @@ auto main()
     const Time_point end_time = Timer_clock::now();
     const double n_seconds = as_seconds( end_time - start_time )/n_iterations;
 
-    clog << n_seconds << " seconds per shuffle." << endl;
+    clog << fixed << n_seconds << " seconds per shuffle." << endl;
     cout << "Array-shuffled " << n << " words:" << endl;
     Abbreviated_list_displayer displayer( cout, n );
     for( const string_view& word: words ) { displayer.display( word ); }

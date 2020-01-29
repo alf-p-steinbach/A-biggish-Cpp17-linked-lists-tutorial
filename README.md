@@ -2132,7 +2132,7 @@ namespace x = oneway_sorting_examples;
 using x::Node, x::List, x::english_words_list, x::merge_shuffle;
 
 #include <iostream>
-using std::cout, std::clog, std::endl;
+using std::fixed, std::cout, std::clog, std::endl;
 
 auto main()
     -> int
@@ -2146,7 +2146,7 @@ auto main()
     const Time_point end_time = Timer_clock::now();
     const double n_seconds = as_seconds( end_time - start_time );
 
-    clog << n_seconds << " seconds." << endl;
+    clog << fixed << n_seconds << " seconds." << endl;
     cout << "Merge-shuffled " << n << " words:" << endl;
     Abbreviated_list_displayer displayer( cout, n );
     for( Node* p = words.head; p != nullptr; p = p->next ) {
@@ -2213,7 +2213,9 @@ using Index = Size;
 #include <vector>           // std::vector
 #include <string_view>      // std::string_view
 #include <utility>          // std::swap
-using std::vector, std::string_view, std::swap, std::cout, std::clog, std::endl;
+using
+    std::vector, std::string_view, std::swap,
+    std::fixed, std::cout, std::clog, std::endl;
 
 auto english_words_vector()
     -> vector<string_view>
@@ -2256,7 +2258,7 @@ auto main()
     const Time_point end_time = Timer_clock::now();
     const double n_seconds = as_seconds( end_time - start_time )/n_iterations;
 
-    clog << n_seconds << " seconds per shuffle." << endl;
+    clog << fixed << n_seconds << " seconds per shuffle." << endl;
     cout << "Array-shuffled " << n << " words:" << endl;
     Abbreviated_list_displayer displayer( cout, n );
     for( const string_view& word: words ) { displayer.display( word ); }
@@ -2282,7 +2284,7 @@ ruction, phosphate, roosts, charles, towelling, ..., toys, chase, pincered, step
 0.002025 seconds per shuffle.
 0.001999 seconds per shuffle.
 0.003017 seconds per shuffle.
-0.002 seconds per shuffle.
+0.002000 seconds per shuffle.
 0.002203 seconds per shuffle.
 0.001999 seconds per shuffle.
 0.002996 seconds per shuffle.
@@ -2308,7 +2310,7 @@ reagents, wing, consists, bountiful, mordant, ..., hatefully, quarrying, apis, w
 
 [X:\source\sorting_singly_linked]
 > for /L %x in (1,1,11) do @(a>nul)
-0.0017254 seconds per shuffle.
+0.00172540 seconds per shuffle.
 0.00175082 seconds per shuffle.
 0.00174088 seconds per shuffle.
 0.00170986 seconds per shuffle.
@@ -2333,7 +2335,7 @@ curiosity, others, nightmarish, detachments, accept, ..., hitchhiked, jots, pars
 0.0020144 seconds per shuffle.
 0.0022796 seconds per shuffle.
 0.0020431 seconds per shuffle.
-0.002024 seconds per shuffle.
+0.0020240 seconds per shuffle.
 0.0037843 seconds per shuffle.
 0.0022624 seconds per shuffle.
 0.0020283 seconds per shuffle.
