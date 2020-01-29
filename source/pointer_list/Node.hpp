@@ -6,13 +6,13 @@ struct Node
     Node*   next;
     double  value;
 
-    void link_in_before( Node*& a_next_field )
+    void link_in_before( Node*& a_next_field ) noexcept
     {
         next = a_next_field;
         a_next_field = this;
     }
     
-    friend auto unlinked( Node*& a_next_field )
+    friend auto unlinked( Node*& a_next_field ) noexcept
         -> Node*
     {
         const Type_<Node*> result = a_next_field;
@@ -20,10 +20,8 @@ struct Node
         return result;
     }
     
-    friend void delete_list( Node* head )
+    friend void delete_list( Node* head ) noexcept
     {
-        while( head != nullptr ) {
-            delete unlinked( head );
-        }
+        while( head ) { delete unlinked( head ); }
     }
 };

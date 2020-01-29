@@ -10,13 +10,13 @@ namespace oneway_sorting_examples {
         Node*           next;
         string_view     value;
 
-        void link_in_before( Node*& a_next_field )
+        void link_in_before( Node*& a_next_field ) noexcept
         {
             next = a_next_field;
             a_next_field = this;
         }
         
-        friend auto unlinked( Node*& a_next_field )
+        friend auto unlinked( Node*& a_next_field ) noexcept
             -> Node*
         {
             const Type_<Node*> result = a_next_field;
@@ -24,7 +24,7 @@ namespace oneway_sorting_examples {
             return result;
         }
         
-        friend void delete_list( Node* head )
+        friend void delete_list( Node* head ) noexcept
         {
             while( head != nullptr ) {
                 delete unlinked( head );

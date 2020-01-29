@@ -1161,19 +1161,20 @@ For a list abstraction one may choose to maintain a last node pointer along with
 [*<small>pointer_list/Node.hpp</small>*](source/pointer_list/Node.hpp)
 ~~~cpp
 #pragma once
+#include "../Type_.hpp"
 
 struct Node
 {
     Node*   next;
     double  value;
 
-    void link_in_before( Node*& a_next_field )
+    void link_in_before( Node*& a_next_field ) noexcept
     {
         next = a_next_field;
         a_next_field = this;
     }
     
-    friend auto unlinked( Node*& a_next_field )
+    friend auto unlinked( Node*& a_next_field ) noexcept
         -> Node*
     {
         const Type_<Node*> result = a_next_field;
@@ -1181,11 +1182,9 @@ struct Node
         return result;
     }
     
-    friend void delete_list( Node* head )
+    friend void delete_list( Node* head ) noexcept
     {
-        while( head != nullptr ) {
-            delete unlinked( head );
-        }
+        while( head ) { delete unlinked( head ); }
     }
 };
 ~~~
@@ -1763,7 +1762,6 @@ aardvark, aardwolf, aaron, aback, abacus, ..., zooms, zooplankton, zoos, zulu, z
 
 The `double` values of section 3’s `Node` won’t do to handle these words, so a new `Node` type is needed.
 
-
 [*<small>sorting_singly_linked/Node.hpp</small>*](source/sorting_singly_linked/Node.hpp)
 ~~~cpp
 #pragma once
@@ -1778,44 +1776,39 @@ namespace oneway_sorting_examples {
         Node*           next;
         string_view     value;
 
-        void link_in_before( Node*& a_next_field )
-        {
-            next = a_next_field;
-            a_next_field = this;
-        }
-        
-        friend auto unlinked( Node*& a_next_field )
-            -> Node*
-        {
-            const Type_<Node*> result = a_next_field;
-            a_next_field = result->next;
-            return result;
-        }
-        
-        friend void delete_list( Node* head )
-        {
-            while( head != nullptr ) {
-                delete unlinked( head );
-            }
-        }
+        void link_in_before( Node*& a_next_field ) noexcept;
+        friend auto unlinked( Node*& a_next_field ) noexcept;
+        friend void delete_list( Node* head ) noexcept;
     };
 }  // namespace oneway_sorting_examples
 ~~~
 
 We’ll now be passing lists around, including returning them from functions, so it’s a good idea to also define a `List` type that ensures proper copying, moving and destruction. This type doesn’t need to encapsulate the inner workings of a list. We’re still learning and therefore dealing directly with raw, exposed list machinery, the inner nuts ’n bolts ’n gears, but now that machinery is at least safely fastened to a chassis, so to speak:
 
+[*<small>signed_size_types.hpp</small>*](source/signed_size_types.hpp)
+~~~cpp
+#pragma once
+#include <stddef.h>         // ptrdiff_t
+
+namespace signed_size_types {
+    using Size = ptrdiff_t;
+    using Index = Size;
+}  // namespace signed_size_types
+~~~
+
 [*<small>sorting_singly_linked/List.hpp</small>*](source/sorting_singly_linked/List.hpp)
 ~~~cpp
 #pragma once
+#include "../signed_size_types.hpp"
 #include "../Type_.hpp"
 #include "Node.hpp"
 
-#include <stddef.h>         // ptrdiff_t
 #include <algorithm>        // std::(exchange, swap)
+#include <utility>          // std::move
 
 namespace oneway_sorting_examples {
-    using std::exchange, std::swap;
-    using Size = ptrdiff_t;
+    using std::exchange, std::move, std::swap;
+    using signed_size_types::Size, signed_size_types::Index;
 
     // Just taking charge of copying, moving and destruction, not encapsulating internals.
     // For convenience & DRYness provides a nested class `Appender` and a method `count`.
@@ -1824,15 +1817,15 @@ namespace oneway_sorting_examples {
         Node* head;
 
         class Appender;                                         // Convenience.
-        inline auto count() const -> Size;                      // Convenience.
+        inline auto count() const noexcept -> Size;             // Convenience.
 
         inline friend void swap( List& a, List& b ) noexcept;   // Declared for exposition.
         inline auto operator=( const List& other ) -> List&;    // Copy assignment.
-        inline auto operator=( List&& other ) -> List&;         // Move assignment.
-        inline List();                                          // Default constructor.
+        inline auto operator=( List&& other ) noexcept -> List&;// Move assignment.
+        inline List() noexcept;                                 // Default constructor.
         inline List( const List& other );                       // Copy constructor.
-        inline List( List&& other );                            // Move constructor.    
-        inline ~List();                                         // Destructor.
+        inline List( List&& other ) noexcept;                   // Move constructor.    
+        inline ~List() noexcept;                                // Destructor.
     };
 
     class List::Appender
@@ -1843,30 +1836,26 @@ namespace oneway_sorting_examples {
         Appender( const Appender& ) = delete;
 
     public:
-        Appender( Node*& a_head_pointer ):
+        Appender( Node*& a_head_pointer ) noexcept:
             m_head( a_head_pointer ),
             m_last( nullptr )
         {
-            for( Node* p = m_head; p != nullptr; p = p->next ) {
-                m_last = p;
-            }
+            for( Node* p = m_head; p; p = p->next ) { m_last = p; }
         }
 
-        void append( const Type_<Node*> new_node )
+        void append( const Type_<Node*> new_node ) noexcept
         {
-            Node*& beyond = (m_last == nullptr? m_head : m_last->next);
+            Node*& beyond = (m_last? m_last->next : m_head);
             new_node->link_in_before( beyond );
             m_last = new_node;
         }
     };
 
-    inline auto List::count() const
+    inline auto List::count() const noexcept
         -> Size
     {
         Size n = 0;
-        for( Node* p = head; p != nullptr; p = p->next ) {
-            ++n;
-        }
+        for( Node* p = head; p; p = p->next ) { ++n; }
         return n;
     }
 
@@ -1883,31 +1872,38 @@ namespace oneway_sorting_examples {
         return *this;
     }
         
-    inline auto List::operator=( List&& other )
+    inline auto List::operator=( List&& other ) noexcept
         -> List&
     {
-        head = exchange( other.head, nullptr );
+        // Can be optimized, but delegation to constructor + swap is nicely DRY.
+        List temp = move( other );
+        swap( temp, *this );
         return *this;
     }
 
-    inline List::List():
+    inline List::List() noexcept:
         head( nullptr )
     {}
 
     inline List::List( const List& other ):
         List()
     {
-        Appender appender( *this );
-        for( Node* p = other.head; p != nullptr; p = p->next ) {
-            appender.append( new Node{ nullptr, p->value } );
+        Appender appender( head );
+        try {
+            for( Node* p = other.head; p; p = p->next ) {
+                appender.append( new Node{ nullptr, p->value } );
+            }
+        } catch( ... ) {
+            delete_list( head );
+            throw;
         }
     }
     
-    inline List::List( List&& other ):
+    inline List::List( List&& other ) noexcept:
         head( exchange( other.head, nullptr ) )
     {}
 
-    inline List::~List()
+    inline List::~List() noexcept
     {
         delete_list( head );
     }

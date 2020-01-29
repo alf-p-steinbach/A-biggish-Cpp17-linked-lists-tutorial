@@ -1,13 +1,14 @@
 ﻿#pragma once
+#include "../signed_size_types.hpp"
 #include "../Type_.hpp"
 #include "Node.hpp"
 
-#include <stddef.h>         // ptrdiff_t
 #include <algorithm>        // std::(exchange, swap)
+#include <utility>          // std::move
 
 namespace oneway_sorting_examples {
-    using std::exchange, std::swap;
-    using Size = ptrdiff_t;
+    using std::exchange, std::move, std::swap;
+    using signed_size_types::Size, signed_size_types::Index;
 
     // Just taking charge of copying, moving and destruction, not encapsulating internals.
     // For convenience & DRYness provides a nested class `Appender` and a method `count`.
@@ -16,15 +17,15 @@ namespace oneway_sorting_examples {
         Node* head;
 
         class Appender;                                         // Convenience.
-        inline auto count() const -> Size;                      // Convenience.
+        inline auto count() const noexcept -> Size;             // Convenience.
 
         inline friend void swap( List& a, List& b ) noexcept;   // Declared for exposition.
         inline auto operator=( const List& other ) -> List&;    // Copy assignment.
-        inline auto operator=( List&& other ) -> List&;         // Move assignment.
-        inline List();                                          // Default constructor.
+        inline auto operator=( List&& other ) noexcept -> List&;// Move assignment.
+        inline List() noexcept;                                 // Default constructor.
         inline List( const List& other );                       // Copy constructor.
-        inline List( List&& other );                            // Move constructor.    
-        inline ~List();                                         // Destructor.
+        inline List( List&& other ) noexcept;                   // Move constructor.    
+        inline ~List() noexcept;                                // Destructor.
     };
 
     class List::Appender
@@ -35,30 +36,26 @@ namespace oneway_sorting_examples {
         Appender( const Appender& ) = delete;
 
     public:
-        Appender( Node*& a_head_pointer ):
+        Appender( Node*& a_head_pointer ) noexcept:
             m_head( a_head_pointer ),
             m_last( nullptr )
         {
-            for( Node* p = m_head; p != nullptr; p = p->next ) {
-                m_last = p;
-            }
+            for( Node* p = m_head; p; p = p->next ) { m_last = p; }
         }
 
-        void append( const Type_<Node*> new_node )
+        void append( const Type_<Node*> new_node ) noexcept
         {
-            Node*& beyond = (m_last == nullptr? m_head : m_last->next);
+            Node*& beyond = (m_last? m_last->next : m_head);
             new_node->link_in_before( beyond );
             m_last = new_node;
         }
     };
 
-    inline auto List::count() const
+    inline auto List::count() const noexcept
         -> Size
     {
         Size n = 0;
-        for( Node* p = head; p != nullptr; p = p->next ) {
-            ++n;
-        }
+        for( Node* p = head; p; p = p->next ) { ++n; }
         return n;
     }
 
@@ -75,14 +72,16 @@ namespace oneway_sorting_examples {
         return *this;
     }
         
-    inline auto List::operator=( List&& other )
+    inline auto List::operator=( List&& other ) noexcept
         -> List&
     {
-        head = exchange( other.head, nullptr );
+        // Can be optimized, but delegation to constructor + swap is nicely DRY.
+        List temp = move( other );
+        swap( temp, *this );
         return *this;
     }
 
-    inline List::List():
+    inline List::List() noexcept:
         head( nullptr )
     {}
 
@@ -90,16 +89,21 @@ namespace oneway_sorting_examples {
         List()
     {
         Appender appender( head );
-        for( Node* p = other.head; p != nullptr; p = p->next ) {
-            appender.append( new Node{ nullptr, p->value } );
+        try {
+            for( Node* p = other.head; p; p = p->next ) {
+                appender.append( new Node{ nullptr, p->value } );
+            }
+        } catch( ... ) {
+            delete_list( head );
+            throw;
         }
     }
     
-    inline List::List( List&& other ):
+    inline List::List( List&& other ) noexcept:
         head( exchange( other.head, nullptr ) )
     {}
 
-    inline List::~List()
+    inline List::~List() noexcept
     {
         delete_list( head );
     }
