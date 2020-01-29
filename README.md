@@ -2328,28 +2328,30 @@ reagents, wing, consists, bountiful, mordant, ..., hatefully, quarrying, apis, w
 In contrast, the timer used by Visual C++ 2019 (here invoked with optimization option `/O2`) appears to have high enough resolution to measure single shuffles:
 
 ~~~txt
-0.0020561 seconds per shuffle.
+[X:\source\sorting_singly_linked]
+> b
+0.001984 seconds per shuffle.
 Array-shuffled 58112 words:
 curiosity, others, nightmarish, detachments, accept, ..., hitchhiked, jots, parsec, arbiters, plumbago.
 
 [X:\source\sorting_singly_linked]
-> for /L %x in (1,1,11) do @(b>nul)
-0.0020144 seconds per shuffle.
-0.0022796 seconds per shuffle.
-0.0020431 seconds per shuffle.
-0.0020240 seconds per shuffle.
-0.0037843 seconds per shuffle.
-0.0022624 seconds per shuffle.
-0.0020283 seconds per shuffle.
-0.0021941 seconds per shuffle.
-0.0019942 seconds per shuffle.
-0.0022344 seconds per shuffle.
-0.0021085 seconds per shuffle.
+> for /L %i in (1,1,11) do @b>nul
+0.001968 seconds per shuffle.
+0.001982 seconds per shuffle.
+0.002046 seconds per shuffle.
+0.001976 seconds per shuffle.
+0.001987 seconds per shuffle.
+0.002860 seconds per shuffle.
+0.002003 seconds per shuffle.
+0.001989 seconds per shuffle.
+0.002055 seconds per shuffle.
+0.001998 seconds per shuffle.
+0.001994 seconds per shuffle.
 ~~~
 
 Asking for averaging produced very similar numbers.
 
-So, it looks like MinGW g++ optimizes this slightly better than Visual C++, with roughly 0.0016 seconds per shuffle versus roughly 0.0022 seconds.
+So, it looks like MinGW g++ optimizes this slightly better than Visual C++, with roughly 0.0016 seconds per shuffle versus roughly 0.0020 seconds.
 
 Compared to the roughly 0.012 seconds for the linked list merge shuffle with g++, the 0.0016 seconds array shuffle is roughly 7.5 times faster. But keep in mind that these numbers are just one arbitrary real example. The main point is that not only in theoretical big Oh behavior but also in practice for a not minimal data set, arrays win handily over linked lists, with shorter and faster code for arrays plus, arrays have standard library support for this task via `std::shuffle`.
 
