@@ -1182,9 +1182,14 @@ struct Node
         return result;
     }
     
-    friend void delete_list( Node* head ) noexcept
+    friend void delete_list_and_zero( Node*& head ) noexcept
     {
         while( head ) { delete unlinked( head ); }
+    }
+
+    friend void delete_list( Node*&& temp ) noexcept
+    {
+        delete_list_and_zero( temp );
     }
 };
 ~~~
@@ -1230,7 +1235,7 @@ auto main()
         cout << p->value << endl;
     }
 
-    delete_list( head );
+    delete_list( +head );
 }
 ~~~
 
@@ -1243,6 +1248,10 @@ Output:
 42
 -1
 ~~~
+
+Here the construct `+head` forms a *pointer value*. Another way to do this is to write `head + 0`. It’s done because `delete_list` takes an rvalue reference as formal argument, so that one can pass it e.g. a pointer value returned from a function.
+
+Originally I let `delete_list` take its argument by value, which had the same desirable property of allowing values as arguments. However, this then clashed with my own later expectation that it should zero out a variable passed as argument. So, the two cases are now separated on the principle that generally explicit = good, implicit = bad.
 
 In this program for an ordinary desktop system or better it’s not technically necessary to `delete` all the nodes at the end. The operating system, e.g. Mac OS, Linux or Windows, will reclaim the memory automatically when the process terminates. It will also close any open file handles and will in general do a fair general clean-up, and as long as that automatic clean-up covers what the program needs clean-up for (e.g. it doesn't cover removing temporary files) one can technically just rely on it.
 
@@ -1284,7 +1293,7 @@ auto main()
     }
     cout << "." << endl;
 
-    delete_list( head );
+    delete_list( +head );
 }
 ~~~
 
@@ -1340,7 +1349,7 @@ auto main()
     cout << endl;
 
     // Clean up, just to be nice.
-    delete_list( head );
+    delete_list( +head );
 }
 ~~~
 
@@ -1408,7 +1417,7 @@ auto main()
     }
 
     display( "The list is now", head );
-    delete_list( head );
+    delete_list( +head );
 }
 ~~~
 
@@ -1481,7 +1490,7 @@ auto main()
     }
 
     display( "The list is now", head );
-    delete_list( head );
+    delete_list( +head );
 }
 ~~~
 
@@ -1560,7 +1569,7 @@ auto main()
     delete_list( list_of_all_not_42_in( head ) );
 
     display( "The list is now", head );
-    delete_list( head );
+    delete_list( +head );
 }
 ~~~
 
@@ -1778,7 +1787,8 @@ namespace oneway_sorting_examples {
 
         void link_in_before( Node*& a_next_field ) noexcept;
         friend auto unlinked( Node*& a_next_field ) noexcept;
-        friend void delete_list( Node* head ) noexcept;
+        friend void delete_list_and_zero( Node*& head ) noexcept;
+        friend void delete_list( Node*&& temp ) noexcept;
     };
 }  // namespace oneway_sorting_examples
 ~~~
@@ -1894,7 +1904,7 @@ namespace oneway_sorting_examples {
                 appender.append( new Node{ nullptr, p->value } );
             }
         } catch( ... ) {
-            delete_list( head );
+            delete_list( +head );
             throw;
         }
     }
@@ -1905,7 +1915,7 @@ namespace oneway_sorting_examples {
 
     inline List::~List() noexcept
     {
-        delete_list( head );
+        delete_list( +head );
     }
 
 }  // namespace oneway_sorting_examples

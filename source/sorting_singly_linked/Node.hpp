@@ -15,7 +15,7 @@ namespace oneway_sorting_examples {
             next = a_next_field;
             a_next_field = this;
         }
-        
+
         friend auto unlinked( Node*& a_next_field ) noexcept
             -> Node*
         {
@@ -24,11 +24,14 @@ namespace oneway_sorting_examples {
             return result;
         }
         
-        friend void delete_list( Node* head ) noexcept
+        friend void delete_list_and_zero( Node*& head ) noexcept
         {
-            while( head != nullptr ) {
-                delete unlinked( head );
-            }
+            while( head ) { delete unlinked( head ); }
+        }
+
+        friend void delete_list( Node*&& temp ) noexcept
+        {
+            delete_list_and_zero( temp );
         }
     };
 }  // namespace oneway_sorting_examples

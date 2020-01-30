@@ -47,5 +47,5 @@ auto main()
     }
 
     display( "The list is now", head );
-    delete_list( head );
+    delete_list( +head );
 }

@@ -94,7 +94,7 @@ namespace oneway_sorting_examples {
                 appender.append( new Node{ nullptr, p->value } );
             }
         } catch( ... ) {
-            delete_list( head );
+            delete_list( +head );
             throw;
         }
     }
@@ -105,7 +105,7 @@ namespace oneway_sorting_examples {
 
     inline List::~List() noexcept
     {
-        delete_list( head );
+        delete_list( +head );
     }
 
 }  // namespace oneway_sorting_examples

@@ -12,5 +12,5 @@ auto main()
         cout << p->value << endl;
     }
 
-    delete_list( head );
+    delete_list( +head );
 }

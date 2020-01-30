@@ -35,5 +35,5 @@ auto main()
     cout << endl;
 
     // Clean up, just to be nice.
-    delete_list( head );
+    delete_list( +head );
 }

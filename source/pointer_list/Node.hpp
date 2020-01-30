@@ -20,8 +20,13 @@ struct Node
         return result;
     }
     
-    friend void delete_list( Node* head ) noexcept
+    friend void delete_list_and_zero( Node*& head ) noexcept
     {
         while( head ) { delete unlinked( head ); }
+    }
+
+    friend void delete_list( Node*&& temp ) noexcept
+    {
+        delete_list_and_zero( temp );
     }
 };

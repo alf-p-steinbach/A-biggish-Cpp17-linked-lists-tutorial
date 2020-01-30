@@ -1,0 +1,8 @@
+CPPFLAGS=/nologo /utf-8 /EHsc /GR /FI"iso646.h" /std:c++17 /Zc:__cplusplus /W4 /wd4459 /D _CRT_SECURE_NO_WARNINGS /D _STL_SECURE_NO_WARNINGS
+
+all: \
+    array_shuffle_result.exe \
+    english_words_list_result.exe \
+    merge_shuffle_result.exe \
+    merge_sort_recursively_result.exe \
+    shuffled_english_words_list_result.exe

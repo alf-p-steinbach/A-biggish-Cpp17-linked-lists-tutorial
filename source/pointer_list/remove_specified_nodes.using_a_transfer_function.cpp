@@ -55,5 +55,5 @@ auto main()
     delete_list( list_of_all_not_42_in( head ) );
 
     display( "The list is now", head );
-    delete_list( head );
+    delete_list( +head );
 }

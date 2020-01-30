@@ -42,7 +42,7 @@ namespace app {
         struct List     // If you have such class derive this from a `No_copy_or_move`.
         {
             Node* head = list_copy_of_the_five_important_numbers();
-            ~List() { delete_list( head ); }        // Auto cleanup also when exception.
+            ~List() { delete_list( +head ); }   // Auto cleanup also when exception.
         };
         
         List list;

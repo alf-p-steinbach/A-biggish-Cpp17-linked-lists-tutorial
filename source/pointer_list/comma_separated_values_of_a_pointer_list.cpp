@@ -18,5 +18,5 @@ auto main()
     }
     cout << "." << endl;
 
-    delete_list( head );
+    delete_list( +head );
 }

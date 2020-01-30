@@ -71,5 +71,5 @@ auto main()
 #endif
     display( "After deleting the too math-ish numbers the list is", head );
 
-    delete_list( head );
+    delete_list( +head );
 }
