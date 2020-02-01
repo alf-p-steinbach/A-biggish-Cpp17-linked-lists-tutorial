@@ -1821,13 +1821,15 @@ namespace oneway_sorting_examples {
     using signed_size_types::Size, signed_size_types::Index;
 
     // Just taking charge of copying, moving and destruction, not encapsulating internals.
-    // For convenience & DRYness provides a nested class `Appender` and a method `count`.
+    // For convenience & DRYness also provides
+    // a nested class `Appender`, a method `count`, and a method `is_sorted`.
     struct List
     {
         Node* head;
 
-        class Appender;                                         // Convenience.
-        inline auto count() const noexcept -> Size;             // Convenience.
+        class Appender;                                         // Convenience & DRYness.
+        inline auto count() const noexcept -> Size;             // Convenience & DRYness.
+        inline auto is_sorted() const noexcept -> bool;         // Convenience & DRYness.
 
         inline friend void swap( List& a, List& b ) noexcept;   // Declared for exposition.
         inline auto operator=( const List& other ) -> List&;    // Copy assignment.
@@ -1865,8 +1867,21 @@ namespace oneway_sorting_examples {
         -> Size
     {
         Size n = 0;
-        for( Node* p = head; p; p = p->next ) { ++n; }
+        for( const Node* p = head; p; p = p->next ) { ++n; }
         return n;
+    }
+
+    inline auto List::is_sorted() const noexcept
+        -> bool
+    {
+        string_view previous = "";
+        for( const Node* p = head; p; p = p->next ) {
+            if( p->value < previous ) {
+                return false;
+            }
+            previous = p->value;
+        }
+        return true;
     }
 
     inline void swap( List& a, List& b ) noexcept
