@@ -13,39 +13,51 @@ using
     x::Node, x::List, x::merge_sort_recursively;
 using Words_list_func = auto()->List;
 
-#include <iostream>
-using std::vector, std::string_view, std::fixed, std::cout, std::clog, std::endl;
+#include <iomanip>          // std::setw
+#include <iostream>         // std::(fixed, cout, clog, endl)    
+#include <limits>           // std::numeric_limits
+#include <optional>         // std::optional
+using
+    std::setw, std::numeric_limits,
+    std::fixed, std::cout, std::clog, std::endl,
+    std::optional;
 
-void test( Words_list_func& words_list, Type_<const char*> list_description )
+auto seconds_for( Words_list_func& words_list )
+    -> optional<double>
 {
-    List words = words_list();
-    const int n = int( words.count() );
-    
+    List                words       = words_list();
     const Time_point    start_time  = Timer_clock::now();
     merge_sort_recursively( words );
     const Time_point    end_time    = Timer_clock::now();
-    const double        n_seconds   = as_seconds( end_time - start_time );
-    const bool          ok          = words.is_sorted();
 
-    clog << fixed << n_seconds << " seconds." << endl;
-    cout    << "Recursively merge-sorted " << n << " words"
-            << " from " << list_description << "()"
-            << " with " << (ok? "sorted" : "UNGOOD") << " result:"
-            << endl;
-    Abbreviated_list_displayer displayer( cout, n );
-    for( const Node* p = words.head; p != nullptr; p = p->next ) {
-        displayer.display( p->value );
+    if( not words.is_sorted() ) {
+        return {};
     }
-    cout << "." << endl;
+    return as_seconds( end_time - start_time );
 }
-
-#define TEST( f ) test( *[]{return f();}, #f )
 
 auto main()
     -> int
 {
-    using my_random::Seed;
-    clog << endl;
-    TEST( english_words_list );
-    TEST( shuffled_english_words_list );
+    cout << fixed;
+
+    cout    << "Recursive merge-sort results in seconds, for "
+            << english_words_list().count() << " words:"
+            << endl;
+    cout << endl;
+    const auto w = setw( 16 );
+    cout << w << "Sorted data:" << w << "Shuffled data:" << w << "Diff:" << endl;
+    for( int i = 1; i <= 12; ++i ) {
+        constexpr double nan = numeric_limits<double>::quiet_NaN();
+        const auto& sorted_words    = *english_words_list;
+        const auto& shuffled_words  = *[]{ return shuffled_english_words_list(); };
+
+        const double sorted_time    = seconds_for( sorted_words ).value_or( nan );
+        const double shuffled_time  = seconds_for( shuffled_words ).value_or( nan );
+        cout
+            << w << sorted_time
+            << w << shuffled_time
+            << w << shuffled_time - sorted_time
+            << endl;
+    }
 }
