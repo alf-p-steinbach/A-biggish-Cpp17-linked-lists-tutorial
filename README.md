@@ -45,6 +45,8 @@ It’s mostly about *understanding* things, which is necessary for analysis and 
   - [4.1 Use the Corncob free list of >58 000 English words as data.](#41-use-the-corncob-free-list-of-58%C2%A0000-english-words-as-data)
   - [4.2. `Node` and `List` classes, and an `english_words_list()` function.](#42-node-and-list-classes-and-an-english_words_list-function)
   - [4.3. Randomize a list efficiently.](#43-randomize-a-list-efficiently)
+  - [4.4. Merge-sort a list recursively.](#44-merge-sort-a-list-recursively)
+  - [](#)
 - [asd](#asd)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
@@ -2408,6 +2410,157 @@ As already shown this function produces a list, based on pseudo-random sequence 
 usurer, undisguised, hosepipe, reasonless, fouled, ..., hawaii, droving, cathartic, accesses, stuffiness.
 ~~~
 
+### 4.4. Merge-sort a list recursively.
+
+Recursive merge-sort is so well suited to linked lists that the most straightword code works, and is clean and clear:
+
+[*<small>sorting_singly_linked/merge_sort_recursively.hpp</small>*](source/sorting_singly_linked/merge_sort_recursively.hpp)
+~~~cpp
+#pragma once
+#include "List.hpp"
+
+#include <array>        // std::array
+
+namespace oneway_sorting_examples {
+    using std::array;
+    
+    inline void merge_sort_recursively( List& list )
+    {
+        // Recursion base case: a list with n <= 1 nodes is necessarily sorted.
+        if( not list.head or not list.head->next ) {
+            return;
+        }
+        array<List, 2> parts;
+        
+        // Divide the nodes about equally to part lists (a partitioning of nodes):
+        for( int i = 0; list.head; ) {
+            unlinked( list.head )->link_in_before( parts[i%2].head );
+            ++i;
+        }
+        
+        // Recurse:
+        for( int i = 0; i < 2; ++i ) {
+            merge_sort_recursively( parts[i] );
+        }
+        
+        // Merge the now sorted 2 parts in sorted order:
+        List::Appender appender( list.head );
+        for( ;; ) {
+            const int n_empty = (not parts[0].head) + (not parts[1].head);
+            if( n_empty == 2 ) {
+                break;      // Hurray, we're finished at this recursion level.
+            } else if( n_empty == 1 ) {
+                const int i_rest = (parts[0].head? 0 : 1);
+                do {
+                    appender.append( unlinked( parts[i_rest].head ) );
+                } while( parts[i_rest].head );
+            } else { // n_empty == 0
+                const int i = (parts[0].head->value < parts[1].head->value? 0 : 1);
+                appender.append( unlinked( parts[i].head ) );
+            }
+        }
+    }
+
+}  // namespace oneway_sorting_examples
+~~~
+
+The O(1) recursion base case checking here, that the list does not have more than 1 node, illustrates that even standard library classes can lack crucial functionality. To wit, `std::forward_list` does not provide a method to O(1)-check that condition directly. It can be expressed as `list.empty() or next(list.begin()) == list.end()`, directly analogous to the pointer based code above, but one would not expect a novice to come up with that or, in particular, to understand that one is *supposed* to implement such things, that the `forward_list` design is RISC-like minimal.
+
+Recall that with MinGW g++ 9.2 in Windows 10, using optimization option -O3, a merge-*shuffle* of the 58 000+ words took about 0.012 seconds.
+
+So, with the same compiler, options and system, how does a merge-*sort* fare?
+
+[*<small>sorting_singly_linked/merge_sort_recursively_result.cpp</small>*](source/sorting_singly_linked/merge_sort_recursively_result.cpp)
+~~~cpp
+#include "../my_chrono.hpp"
+#include "../my_random.hpp"
+using my_chrono::Timer_clock, my_chrono::Time_point, my_chrono::as_seconds;
+
+#include "shuffled_english_words_list.hpp"
+#include "merge_sort_recursively.hpp"
+namespace x = oneway_sorting_examples;
+using
+    x::english_words_list, x::shuffled_english_words_list,
+    x::Node, x::List, x::merge_sort_recursively;
+using Words_list_func = auto()->List;
+
+#include <iomanip>          // std::setw
+#include <iostream>         // std::(fixed, cout, clog, endl)    
+#include <limits>           // std::numeric_limits
+#include <optional>         // std::optional
+using
+    std::setw, std::numeric_limits,
+    std::fixed, std::cout, std::clog, std::endl,
+    std::optional;
+
+auto seconds_for( Words_list_func& words_list )
+    -> optional<double>
+{
+    List                words       = words_list();
+    const Time_point    start_time  = Timer_clock::now();
+    merge_sort_recursively( words );
+    const Time_point    end_time    = Timer_clock::now();
+
+    if( not words.is_sorted() ) {
+        return {};
+    }
+    return as_seconds( end_time - start_time );
+}
+
+auto main()
+    -> int
+{
+    cout << fixed;
+
+    cout    << "Recursive merge-sort results in seconds, for "
+            << english_words_list().count() << " words:"
+            << endl;
+    cout << endl;
+    const auto w = setw( 16 );
+    cout << w << "Sorted data:" << w << "Shuffled data:" << w << "Diff:" << endl;
+    for( int i = 1; i <= 12; ++i ) {
+        constexpr double nan = numeric_limits<double>::quiet_NaN();
+        const auto& sorted_words    = *english_words_list;
+        const auto& shuffled_words  = *[]{ return shuffled_english_words_list(); };
+
+        const double sorted_time    = seconds_for( sorted_words ).value_or( nan );
+        const double shuffled_time  = seconds_for( shuffled_words ).value_or( nan );
+        cout
+            << w << sorted_time
+            << w << shuffled_time
+            << w << shuffled_time - sorted_time
+            << endl;
+    }
+}
+~~~
+
+A typical result — with the aforementioned compiler, options and system, and the 58 000+ words:
+
+~~~txt
+Recursive merge-sort results in seconds, for 58112 words:
+
+    Sorted data:  Shuffled data:           Diff:
+        0.035842        0.035539       -0.000303
+        0.029644        0.030225        0.000581
+        0.041317        0.039680       -0.001637
+        0.033998        0.029781       -0.004217
+        0.037587        0.043382        0.005795
+        0.030052        0.036938        0.006886
+        0.030077        0.039889        0.009812
+        0.030913        0.026196       -0.004717
+        0.031621        0.030113       -0.001508
+        0.038929        0.030195       -0.008734
+        0.039260        0.031010       -0.008250
+        0.030034        0.039993        0.009959
+~~~
+
+Compared to 0.012 seconds for a shuffle, 0.036 or so for the sort is 3 times slower. In theory a shuffle is just a sort, namely reorganizing the data into a chosen random permutation. But in practice the shuffle differs both in being simpler and in being faster.
+
+From several runs it looks as if sorting the shuffled data is slightly faster (or less slow) than sorting the already sorted data, but this may be just my perception.
+
+One way to capitalize on the presence of already sorted stretches in the data, is to use an iterative merge sort instead of a recursive one.
+
+###
 asd
 ------
 

@@ -2,9 +2,6 @@
 #include "../my_random.hpp"
 using my_chrono::Timer_clock, my_chrono::Time_point, my_chrono::as_seconds;
 
-#include "../data/Abbreviated_list_displayer.hpp"
-using data::Abbreviated_list_displayer;
-
 #include "shuffled_english_words_list.hpp"
 #include "merge_sort_recursively.hpp"
 namespace x = oneway_sorting_examples;
