@@ -2556,7 +2556,7 @@ Recursive merge-sort results in seconds, for 58112 words:
 
 Compared to 0.012 seconds for a shuffle, 0.036 or so for the sort is 3 times slower. In theory a shuffle is just a sort, namely reorganizing the data into a chosen random permutation. But in practice the shuffle differs both in being simpler and in being faster.
 
-From several runs it looks as if sorting the shuffled data is slightly faster (or less slow) than sorting the already sorted data, but this may be just my perception.
+From several runs it looks as if sorting the shuffled data is slightly faster (or less slow) than sorting the already sorted original data, but this may be just my perception.
 
 One way to capitalize on the presence of already sorted stretches in the data, is to use an iterative merge sort instead of a recursive one.
 
