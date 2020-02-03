@@ -1,4 +1,6 @@
-CPPFLAGS=/nologo /utf-8 /EHsc /GR /FI"iso646.h" /std:c++17 /Zc:__cplusplus /W4 /wd4459 /D _CRT_SECURE_NO_WARNINGS /D _STL_SECURE_NO_WARNINGS
+CPPFLAGS=\
+    /nologo /utf-8 /EHsc /GR /FI"iso646.h" /std:c++17 /Zc:__cplusplus /W4 \
+    /wd4459 /D _CRT_SECURE_NO_WARNINGS /D _STL_SECURE_NO_WARNINGS
 
 all: \
     array_shuffle_result.exe \

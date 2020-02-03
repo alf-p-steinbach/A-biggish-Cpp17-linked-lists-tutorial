@@ -46,6 +46,7 @@ It’s mostly about *understanding* things, which is necessary for analysis and 
   - [4.2. `Node` and `List` classes, and an `english_words_list()` function.](#42-node-and-list-classes-and-an-english_words_list-function)
   - [4.3. Randomize a list efficiently.](#43-randomize-a-list-efficiently)
   - [4.4. Merge-sort a list recursively.](#44-merge-sort-a-list-recursively)
+  - [4.4. Merge-sort a list iteratively with “natural runs”.](#44-merge-sort-a-list-iteratively-with-natural-runs)
   - [](#)
 - [asd](#asd)
 
@@ -2559,6 +2560,223 @@ Compared to 0.012 seconds for a shuffle, 0.036 or so for the sort is 3 times slo
 From several runs it looks as if sorting the shuffled data is slightly faster (or less slow) than sorting the already sorted original data, but this may be just my perception.
 
 One way to capitalize on the presence of already sorted stretches in the data, is to use an iterative merge sort instead of a recursive one.
+
+### 4.4. Merge-sort a list iteratively with “natural runs”.
+
+If one considers only how sequences are merged, then with the sequence of 8 𝜋 digits
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*3&nbsp;1&nbsp;4&nbsp;1&nbsp;5&nbsp;9&nbsp;2&nbsp;7*
+
+… the final, bottom recursion level in a recursive merge sort deals with 8 1-digit sequences, which those calls merge pairwise into 4 2-digit sequences:
+
+~~~txt
+  13 14    59 27
+  ↗   ↑    ↑   ↖
+3 1  4 1  5 9  2 7
+~~~
+
+The next to last recursion level merges these 4 2-digit sequences into 2 4-digit sequences:
+
+~~~txt
+     1134 2579
+     ↗       ↖
+  13  14    59  27
+~~~
+
+And the top level call produces the final sorted sequence:
+
+~~~txt
+     11234579
+         ↑
+     1134 2579
+~~~
+
+This does not however reflect the detailed *order* that things happen in. In the executing code the 3|1 merger is done first, then the 4|1 merge, but then the 13|14 merge is done. The function call returns one level up and delves recursively down all the way again, to the 5|9 merge, then the 2|7 merge, then doing the 59|27 merge, and finally the 1134|2579 merge.
+
+The nice thing about disregarding that execution order and considering only recursion *levels*, is that each level’s data can be regarded as a single sequence of **runs** of sorted values. At the bottom level each run is 1 item long, at the next to bottom level each run is 2 items long, and so on, and *n* items for the whole sorted sequence at the top level. Or, to be precise, that's the lengths that one knows about without inspecting the data. Assuming that the runs are of these lengths, powers of 2, yields relatively simple iterative merge sort code that effectively does the same as the recursive version.
+
+In the time of magnetic tape drives, which one typically had a very limited number of, this was desirable because each level’s data could be stored on a single tape. Or, to facilitate the merging, rather two tapes, half of it on each tape. An iterative merge sort would then merge the runs on these tapes onto two other tapes, and just switch the tape pairs for the next iteration. With this scheme one could make do with just 4 tape drives regardless of the sequence size, instead of the 16 tape drives that the recursive scheme would require for our 58 000+ English words, or in general, ⌈log₂(*n*)⌉ tapes drives.
+
+Since the time of tape drives is long past, except possibly for backup in big data centers, and  since the recursive version’s code is so straightforward, one needs some other reason for doing an iterative merge sort. One such reason is that one can leverage already in sort order runs of items, the **natural runs**, and merge them. The natural runs can never be smaller than the power of 2 runs, and they will likely be longer, and this means fewer merges. In the ideal case there will be only one merge for an already sorted sequence, i.e. a single pass. So if the data is already near sorted an iterative merge sort with natural runs may outperform the recursive one.
+
+Dealing with natural runs is however a little bit tricky and involves more checking in the code, so there is a cost  —  *There Ain’t No Such Thing As A Free Lunch*:
+
+[*<small>sorting_singly_linked/merge_sort_iteratively.hpp</small>*](source/sorting_singly_linked/merge_sort_iteratively.hpp)
+~~~cpp
+#pragma once
+#include "List.hpp"
+
+#include <assert.h>     // assert
+
+#include <array>        // std::array
+#include <functional>   // std::invoke
+#include <utility>      // std::move
+
+namespace oneway_sorting_examples {
+    using std::array, std::invoke, std::move, std::string_view;
+
+    struct Merge_sort_input
+    {
+        string_view         previous_value = "";
+        array<List, 2>      in;
+        
+        auto next()
+            -> Node*
+        {
+            const int n_empty = (not in[0].head + not in[1].head);
+            if( n_empty == 2 ) {
+                return nullptr;
+            } else if( n_empty == 1 ) {
+                return unlinked( in[0].head? in[0].head : in[1].head );
+            } else { // n_empty == 0
+                const array<string_view, 2> v =
+                {
+                    in[0].head->value, in[1].head->value
+                };
+
+                if( (v[0] >= previous_value) == (v[1] >= previous_value) ) {
+                    return unlinked( v[0] < v[1]? in[0].head : in[1].head );
+                } else if( v[0] >= previous_value ) {
+                    return unlinked( in[0].head );
+                } else {
+                    return unlinked( in[1].head );
+                }
+            }
+        }
+    };
+
+    inline auto merge_sort_iteratively( List& list )
+        -> int      // Number of passes used.
+    {
+        if( not list.head or not list.head->next ) {
+            return 0;
+        }
+
+        Merge_sort_input    input;
+        array<List, 2>      out;
+
+        out[0] = move( list );
+        for( int n_passes = 1; true; ++n_passes ) {
+            input.previous_value = "";
+            input.in[0] = move( out[0] );
+            input.in[1] = move( out[1] );
+            array<List::Appender, 2> out_appenders = {out[0].head, out[1].head};
+
+            int i_out = 0;
+            for( ;; ) {
+                const Type_<Node*> p = input.next();
+                if( not p ) {
+                    break;          // Merge finished.
+                } else if( p->value < input.previous_value ) {
+                    i_out = 1 - i_out;      // Start a new run in the other out-list.
+                }
+                input.previous_value = p->value;
+                out_appenders[i_out].append( p );
+            }
+
+            if( not out[0].head or not out[1].head ) {
+                list = move( out[0].head? out[0] : out[1] );
+                return n_passes;
+            }
+        }
+    }
+
+}  // namespace oneway_sorting_examples
+~~~
+
+Almost the same code used to test the recursive merge, can now illuminate just how much (if anything) the added complexity adds to the sorting time when the data does *not* have long natural runs already.
+
+[*<small>sorting_singly_linked/merge_sort_iteratively_result.cpp</small>*](source/sorting_singly_linked/merge_sort_iteratively_result.cpp)
+~~~cpp
+#include "../my_chrono.hpp"
+#include "../my_random.hpp"
+using my_chrono::Timer_clock, my_chrono::Time_point, my_chrono::as_seconds;
+
+#include "shuffled_english_words_list.hpp"
+#include "merge_sort_iteratively.hpp"
+namespace x = oneway_sorting_examples;
+using
+    x::english_words_list, x::shuffled_english_words_list,
+    x::Node, x::List, x::merge_sort_iteratively;
+using Words_list_func = auto()->List;
+
+#include <iomanip>          // std::setw
+#include <iostream>         // std::(fixed, cout, clog, endl)    
+#include <limits>           // std::numeric_limits
+#include <optional>         // std::optional
+using
+    std::setw, std::numeric_limits,
+    std::fixed, std::cout, std::clog, std::endl,
+    std::optional;
+
+auto seconds_for( Words_list_func& words_list )
+    -> optional<double>
+{
+    List                words       = words_list();
+    const Time_point    start_time  = Timer_clock::now();
+    merge_sort_iteratively( words );
+    const Time_point    end_time    = Timer_clock::now();
+
+    if( not words.is_sorted() ) {
+        return {};
+    }
+    return as_seconds( end_time - start_time );
+}
+
+auto main()
+    -> int
+{
+    cout << fixed;
+
+    cout    << "Iterative \"natural runs\" merge-sort results in seconds, for "
+            << english_words_list().count() << " words:"
+            << endl;
+    cout << endl;
+    const auto w = setw( 16 );
+    cout << w << "Sorted data:" << w << "Shuffled data:" << w << "Diff:" << endl;
+    for( int i = 1; i <= 12; ++i ) {
+        constexpr double nan = numeric_limits<double>::quiet_NaN();
+        const auto& sorted_words    = *english_words_list;
+        const auto& shuffled_words  = *[]{ return shuffled_english_words_list(); };
+
+        const double sorted_time    = seconds_for( sorted_words ).value_or( nan );
+        const double shuffled_time  = seconds_for( shuffled_words ).value_or( nan );
+        cout
+            << w << sorted_time
+            << w << shuffled_time
+            << w << shuffled_time - sorted_time
+            << endl;
+    }
+}
+~~~
+
+One typical result with MinGW g++ 9.2 in Windows 10, using option `-O3`:
+
+~~~txt
+Iterative "natural runs" merge-sort results in seconds, for 58112 words:
+
+    Sorted data:  Shuffled data:           Diff:
+        0.003018        0.074938        0.071920
+        0.000999        0.059964        0.058965
+        0.002001        0.059965        0.057964
+        0.000985        0.067960        0.066975
+        0.000999        0.060098        0.059099
+        0.000000        0.059402        0.059402
+        0.000000        0.053381        0.053381
+        0.000000        0.069031        0.069031
+        0.015624        0.053416        0.037792
+        0.000000        0.069046        0.069046
+        0.000000        0.069011        0.069011
+        0.015629        0.068993        0.053364
+~~~
+
+For shuffled data it’s clearly slower than the recursive version, up to twice as slow, but for already sorted data it’s way faster. Except — we’re evidently up against the resolution limit of this compiler’s `<chrono>` implementation. The first eight results are very close to multiples of 1 msec, indicating a 1 msec timer, but then comes four results (OK, two of which are zero) that instead are very close to multiples of 1/64ᵗʰ second, or 0.015625 seconds. It’s as if the timer downgrades its resolution midway through these runs. That, and the small deviations from perfect multiples, is just a big mystery to me; I have no explanation.
+
+
+
+
+
+
 
 ###
 asd
