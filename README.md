@@ -2592,7 +2592,7 @@ And the top level call produces the final sorted sequence:
      1134 2579
 ~~~
 
-This does not however reflect the detailed *order* that things happen in. In the executing code the 3|1 merger is done first, then the 4|1 merge, but then the 13|14 merge is done. The function call returns one level up and delves recursively down all the way again, to the 5|9 merge, then the 2|7 merge, then doing the 59|27 merge, and finally the 1134|2579 merge.
+This does not however reflect the detailed *order* that things happen in. In the executing code the 3\|1 merger is done first, then the 4\|1 merge, but then the 13\|14 merge is done. The function call returns one level up and delves recursively down all the way again, to the 5\|9 merge, then the 2\|7 merge, then doing the 59\|27 merge, and finally the 1134\|2579 merge.
 
 The nice thing about disregarding that execution order and considering only recursion *levels*, is that each level’s data can be regarded as a single sequence of **runs** of sorted values. At the bottom level each run is 1 item long, at the next to bottom level each run is 2 items long, and so on, and *n* items for the whole sorted sequence at the top level. Or, to be precise, that's the lengths that one knows about without inspecting the data. Assuming that the runs are of these lengths, powers of 2, yields relatively simple iterative merge sort code that effectively does the same as the recursive version.
 
