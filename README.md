@@ -46,7 +46,7 @@ It’s mostly about *understanding* things, which is necessary for analysis and 
   - [4.2. `Node` and `List` classes, and an `english_words_list()` function.](#42-node-and-list-classes-and-an-english_words_list-function)
   - [4.3. Randomize a list efficiently.](#43-randomize-a-list-efficiently)
   - [4.4. Merge-sort a list recursively.](#44-merge-sort-a-list-recursively)
-  - [4.4. Merge-sort a list iteratively with “natural runs”.](#44-merge-sort-a-list-iteratively-with-natural-runs)
+  - [4.5. Merge-sort a list iteratively with “natural runs”.](#45-merge-sort-a-list-iteratively-with-natural-runs)
   - [](#)
 - [asd](#asd)
 
@@ -2561,7 +2561,8 @@ From several runs it looks as if sorting the shuffled data is slightly faster (o
 
 One way to capitalize on the presence of already sorted stretches in the data, is to use an iterative merge sort instead of a recursive one.
 
-### 4.4. Merge-sort a list iteratively with “natural runs”.
+
+### 4.5. Merge-sort a list iteratively with “natural runs”.
 
 If one considers only how sequences are merged, then with the sequence of 8 𝜋 digits
 
