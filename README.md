@@ -2788,7 +2788,7 @@ As mentioned in passing in section [4.3 “Randomize a list efficiently”](#43-
 ---
 #### Best practically guaranteed resolution = 0.02 seconds.
 
-Any practically useful timer must give at least two to three siginificant digits for a time measurement in the seconds or tens of seconds range. And any timer provided by a successful general C++ implementation must be practically useful. Thus, with any of the successful general C++ implementations — those for desktop systems and higher, like g++, g++-compatible clang, MSVC, and MSVC-compatible Intel — one is practically guaranteed a resolution of 1/50ᵗʰ of a second.
+Any practically useful timer must give at least two to three significant digits for a time measurement in the seconds or tens of seconds range. And any timer provided by a successful general C++ implementation must be practically useful. Thus, with any of the successful general C++ implementations — those for desktop systems and higher, like g++, g++-compatible clang, MSVC, and MSVC-compatible Intel — one is practically guaranteed a resolution of 1/50ᵗʰ of a second.
 
 However, as exemplified earlier one may encounter resolutions of just 1/64ᵗʰ of a second.
 
@@ -3116,7 +3116,7 @@ The code is simpler and probably more reliable, and the results show clearly tha
 The original problem of measuring iterative merge-sort of an already sorted sequence, can’t be solved by *directly* applying `my_chrono::time_per`. That’s because `time_per` depends on possibly executing the given code a great number of times, and that time would include preparation of a sorted linked list, **setup**, and destruction and deallocation of the list, **tear-down** (a.k.a. cleanup), for each of the *n* executions of the **code of interest**, the actual iterative merge sorting. The time for the sorting is likely to drown completely in the times for creation and destruction of a linked list of words.
 
 
-This was not a problem for a single execution, because then one could just note the time right before executting the code of interest, like
+This was not a problem for a single execution, because then one could just note the time right before executing the code of interest, like
 
 ~~~cpp
     setup_code();
@@ -3167,7 +3167,8 @@ Possible other approaches include:
 * Measure the time of setup and possibly also tear-down, separately, in addition to measuring the combined time with the code of interest.
 * Use a system specific timer with much higher in-practice guaranteed resolution than the C++ standard library’s 0.02 secs, e.g. in Windows use Windows’ `QueryPerformanceCounter` function with usually better than 0.000001 secs.
 
-The asynchronous sampling first approach is probably best done by employing a tool for code execution **profiling**, because that’s what it’s all about. No need to implement it yourself when you probably already have a tool, e.g. your IDE, that can do it for you. However, here we’ll use an all C++ code approach, to avoid getting tool-specific, and since the first approach is complex as C++ code we’ll use one of the other approaches.
+The asynchronous sampling first approach is probably best done by employing a tool for code execution **profiling**, because that’s what it’s all about. No need to implement it yourself when you probably already have a tool, e.g. your IDE, that can do it for you.  Disclaimer: I haven’t done this, and I haven’t read anything about it that I recall, so it is perhaps not a common approach, but I see no particular problem with it.
+
 
 
 
