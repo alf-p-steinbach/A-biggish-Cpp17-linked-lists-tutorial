@@ -2932,13 +2932,13 @@ This is one good reason to build such programs as console programs. If it takes 
 
 Since one doesn’t know *a priori* how long or short time the code *f* to be measured takes, a reasonable  —  or at least not unreasonable  —  approach is
 
-1. Try to measure a single execution of *f*. Call that time *t_A*. Let *n* ← 1.  
-2. While the total measured time *t_A* is 0,  
-2.1. Double the number of iterations *n* of *f* and measure as *t_A* again.  
-3. Let *t_B* ← *t_A*.
-4. While *t_B* < min(1 sec, 1000⋅*t_A*):  
-4.1. Double the number of iterations *n* of *f* and measure as *t_B*.
-5. Now hopefully *t_B*/*n* is a 3 significant digits measure of the time of *f*.
+1. Try to measure a single execution of *f*. Call that time *tᴬ*. Let *n* ← 1.  
+2. While the total measured time *tᴬ* is 0,  
+2.1. Double the number of iterations *n* of *f* and measure as *tᴬ* again.  
+3. Let *tᴮ* ← *tᴬ*.
+4. While *tᴮ* < min(1 sec, 1000⋅*tᴬ*):  
+4.1. Double the number of iterations *n* of *f* and measure as *tᴮ*.
+5. Now hopefully *tᴮ*/*n* is a 3 significant digits measure of the time of *f*.
 
 This is the logic used by the `time_for` function at the end in the `"my_chrono.hpp"` wrapper header for this tutorial:
 
