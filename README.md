@@ -42,11 +42,18 @@ It’s mostly about *understanding* things, which is necessary for analysis and 
   - [3.6 Insert in sorted position in a pointer based list.](#36-insert-in-sorted-position-in-a-pointer-based-list)
   - [3.7 Find and remove nodes in a pointer list.](#37-find-and-remove-nodes-in-a-pointer-list)
 - [4. Sorting a singly linked list.](#4-sorting-a-singly-linked-list)
-  - [4.1 Use the Corncob free list of >58 000 English words as data.](#41-use-the-corncob-free-list-of-58000-english-words-as-data)
+  - [4.1 Use the Corncob free list of >58 000 English words as data.](#41-use-the-corncob-free-list-of-58%C2%A0000-english-words-as-data)
   - [4.2. `Node` and `List` classes, and an `english_words_list()` function.](#42-node-and-list-classes-and-an-english_words_list-function)
   - [4.3. Randomize a list efficiently.](#43-randomize-a-list-efficiently)
   - [4.4. Merge-sort a list recursively.](#44-merge-sort-a-list-recursively)
   - [4.5. Merge-sort a list iteratively with “natural runs”.](#45-merge-sort-a-list-iteratively-with-natural-runs)
+  - [4.6. A digression on measuring how long a code execution takes.](#46-a-digression-on-measuring-how-long-a-code-execution-takes)
+    - [Best practically guaranteed resolution = 0.02 seconds.](#best-practically-guaranteed-resolution--002-seconds)
+    - [Wait functions can also have very limited resolution.](#wait-functions-can-also-have-very-limited-resolution)
+    - [Ensure reasonably short timings, not just reasonably long.](#ensure-reasonably-short-timings-not-just-reasonably-long)
+    - [Adapt the measuring to the code being measured.](#adapt-the-measuring-to-the-code-being-measured)
+    - [Separate setup and tear-down code from the code of interest.](#separate-setup-and-tear-down-code-from-the-code-of-interest)
+    - [Possible other approaches.](#possible-other-approaches)
   - [](#)
 - [asd](#asd)
 
@@ -2772,6 +2779,395 @@ Iterative "natural runs" merge-sort results in seconds, for 58112 words:
 ~~~
 
 For shuffled data it’s clearly slower than the recursive version, up to twice as slow, but for already sorted data it’s way faster. Except — we’re evidently up against the resolution limit of this compiler’s `<chrono>` implementation. The first eight results are very close to multiples of 1 msec, indicating a 1 msec timer, but then comes four results (OK, two of which are zero) that instead are very close to multiples of 1/64ᵗʰ second, or 0.015625 seconds. It’s as if the timer downgrades its resolution midway through these runs. That, and the small deviations from perfect multiples, is just a big mystery to me; I have no explanation.
+
+
+### 4.6. A digression on measuring how long a code execution takes.
+
+As mentioned in passing in section [4.3 “Randomize a list efficiently”](#43-randomize-a-list-efficiently): the usual way to measure a code execution that may be too fast for the timer’s resolution, as we encountered in the iterative merge sort of already sorted order data with MinGW g++ 9.2, is to execute that code a great number of times *n*, and divide the total time by *n*.
+
+---
+#### Best practically guaranteed resolution = 0.02 seconds.
+
+Any practically useful timer must give at least two to three siginificant digits for a time measurement in the seconds or tens of seconds range. And any timer provided by a successful general C++ implementation must be practically useful. Thus, with any of the successful general C++ implementations — those for desktop systems and higher, like g++, g++-compatible clang, MSVC, and MSVC-compatible Intel — one is practically guaranteed a resolution of 1/50ᵗʰ of a second.
+
+However, as exemplified earlier one may encounter resolutions of just 1/64ᵗʰ of a second.
+
+Arguably a 1/64ᵗʰ second resolution in Windows is extremely low quality, considering that e.g. Windows’ `QueryPerformanceCounter` function returns a time stamp typically with microsecond resolution (millionth of a second) or better. For example, on my old Windows 10 laptop the code below using the `QueryPerformanceFrequency` function reports 0.1 microseconds per `QueryPerformanceCounter` tick. This extreme discrepancy between system capability and the functionality offered by one major C++ compiler, namely g++, means that as of early 2020 one will still create DIY semi-portable timers instead of relying exclusively on the standard library’s `<chrono>` facilities, which is a shame.
+
+[*<small>explore/winapi-timer-resolution.cpp</small>*](source/explore/winapi-timer-resolution.cpp)
+~~~cpp
+#define NOMINMAX
+#include <windows.h>    // LARGE_INTEGER, QueryPerformanceFrequency
+
+#include <stdlib.h>     // EXIT_...
+#include <iostream>     // std::(cout, endl)
+using std::cout, std::endl;
+
+auto main()
+    -> int
+{
+    LARGE_INTEGER timer_frequency;
+    const bool ok = !!QueryPerformanceFrequency( &timer_frequency );
+    if( not ok ) {
+        return EXIT_FAILURE;
+    }
+    const double tick_duration = 1.0/timer_frequency.QuadPart;
+    cout << "For this process each tick is " << tick_duration << " seconds." << endl;
+}
+~~~
+
+Output on my old laptop (this is compiler-independent but is Windows version, machine and possibly even process specific):
+
+~~~txt
+For this process each tick is 1e-07 seconds.
+~~~
+
+---
+
+#### Wait functions can also have very limited resolution.
+
+The low practically guaranteed resolution of C++ timers, of 0.02 second, also applies to *wait* functions such as `std::this_thread::sleep_for`:
+
+[*<small>explore/wait-resolution.cpp</small>*](source/explore/wait-resolution.cpp)
+~~~cpp
+#include "../my_chrono.hpp"
+using my_chrono::Timer_clock, my_chrono::Duration, my_chrono::as_seconds;
+namespace chrono = std::chrono;
+
+#include <algorithm>        // std::max
+#include <type_traits>      // std::is_same_v
+#include <iomanip>          // std::setw
+#include <iostream>         // std::(cout, endl)
+#include <thread>           // std::this_thread::*
+using 
+    std::min, std::max, std::is_same_v,
+    std::fixed, std::left, std::right, std::setw, std::setprecision,
+    std::cout, std::endl;
+namespace this_thread = std::this_thread;
+
+auto main()
+    -> int
+{
+    const bool using_steady_clock = is_same_v<Timer_clock, chrono::steady_clock>;
+    const auto clock_name = (using_steady_clock? "steady_clock" : "high_resolution_clock");
+    cout << "Using std::" << clock_name << "." << endl;
+    
+    cout << fixed << setprecision( 12 );
+    for(    Duration resolution = chrono::seconds( 1 );
+            resolution >= chrono::microseconds( 1 );
+            resolution /= 2 ) {
+        const auto direct_start_time = Timer_clock::now();
+        this_thread::sleep_for( resolution );
+        const auto direct_end_time = Timer_clock::now();
+        
+        const int n = min( 1000, max( 1,
+            static_cast<int>( chrono::milliseconds( 100 )/resolution )
+            ) );
+        const auto loop_start_time = Timer_clock::now();
+        for( int i = 1; i <= n; ++i ) {
+            this_thread::sleep_for( resolution );
+        }
+        const auto loop_end_time = Timer_clock::now();
+        
+        cout
+            << "Interval " << as_seconds( resolution ) << "s"
+            << " measured directly = " << as_seconds( direct_end_time - direct_start_time )
+            << ", average of " << setw( 5 ) << right << n << " = "
+            << as_seconds( loop_end_time - loop_start_time )/n
+            << "." << endl;
+    }
+}
+~~~
+
+Output with MinGW g++ 9.2 in Windows 10, using optimization option `-O3`:
+
+~~~txt
+Using std::steady_clock.
+Interval 1.000000000000s measured directly = 1.001407000000, average of     1 = 1.000168000000.
+Interval 0.500000000000s measured directly = 0.500724000000, average of     1 = 0.500469000000.
+Interval 0.250000000000s measured directly = 0.251394000000, average of     1 = 0.251021000000.
+Interval 0.125000000000s measured directly = 0.125976000000, average of     1 = 0.125191000000.
+Interval 0.062500000000s measured directly = 0.062842000000, average of     1 = 0.063444000000.
+Interval 0.031250000000s measured directly = 0.032167000000, average of     3 = 0.031820333333.
+Interval 0.015625000000s measured directly = 0.016173000000, average of     6 = 0.016115333333.
+Interval 0.007812500000s measured directly = 0.008019000000, average of    12 = 0.008058166667.
+Interval 0.003906250000s measured directly = 0.004009000000, average of    25 = 0.004006200000.
+Interval 0.001953125000s measured directly = 0.001993000000, average of    51 = 0.002057607843.
+Interval 0.000976562000s measured directly = 0.000984000000, average of   102 = 0.000999598039.
+Interval 0.000488281000s measured directly = 0.001001000000, average of   204 = 0.000999519608.
+Interval 0.000244140000s measured directly = 0.001010000000, average of   409 = 0.000999449878.
+Interval 0.000122070000s measured directly = 0.000996000000, average of   819 = 0.000999429792.
+Interval 0.000061035000s measured directly = 0.001000000000, average of  1000 = 0.000999429000.
+Interval 0.000030517000s measured directly = 0.000997000000, average of  1000 = 0.000999429000.
+Interval 0.000015258000s measured directly = 0.000999000000, average of  1000 = 0.000999426000.
+Interval 0.000007629000s measured directly = 0.000998000000, average of  1000 = 0.000999430000.
+Interval 0.000003814000s measured directly = 0.000999000000, average of  1000 = 0.000999450000.
+Interval 0.000001907000s measured directly = 0.000998000000, average of  1000 = 0.001006444000.
+~~~
+
+Here any wait interval shorter than 1 msec is reported as roughly 1 msec, so evidently that’s the minimum period that `std::this_thread::sleep_for` can wait with MinGW g++ 9.2.
+
+With Visual C++ 2019 using option `/O2` it’s even worse, roughly 2 msec as minimum wait period.
+
+---
+#### Ensure reasonably short timings, not just reasonably long.
+
+In the above code the declaration
+
+~~~cpp
+const int n = min( 1000, max( 1,
+    static_cast<int>( chrono::milliseconds( 100 )/resolution )
+    ) );
+~~~
+
+… exemplifies that it may be necessary to place a cap on the number of iterations *n*, in order to get a reasonably short measurement.
+
+To wit, with a `std::this_thread::sleep_for` resolution of 1 msec, with this cap of maximum 1000 each measurement won’t take longer than 1000⋅0.001 = 1 second. But without the cap the last measurements in this program could take minutes. In other programs one could risk days or years or worse.
+
+This is one good reason to build such programs as console programs. If it takes too long, then in the console just hit *`Ctrl`*+*`C`* to kill the process. Then fix the code to reduce the number of iterations, rebuild and try again.
+
+---
+#### Adapt the measuring to the code being measured.
+
+Since one doesn’t know *a priori* how long or short time the code *f* to be measured takes, a reasonable  —  or at least not unreasonable  —  approach is
+
+1. Try to measure a single execution of *f*. Call that time *t_A*. Let *n* ← 1.  
+2. While the total measured time *t_A* is 0,  
+2.1. Double the number of iterations *n* of *f* and measure as *t_A* again.  
+3. Let *t_B* ← *t_A*.
+4. While *t_B* < min(1 sec, 1000⋅*t_A*):  
+4.1. Double the number of iterations *n* of *f* and measure as *t_B*.
+5. Now hopefully *t_B*/*n* is a 3 significant digits measure of the time of *f*.
+
+This is the logic used by the `time_for` function at the end in the `"my_chrono.hpp"` wrapper header for this tutorial:
+
+[*<small>my_chrono.hpp</small>*](source/my_chrono.hpp)
+~~~cpp
+#pragma once
+// Based on
+// <url: https://github.com/alf-p-steinbach/cppx-core/blob/master/source/cppx-core/
+// stdlib-wrappers/chrono-util.hpp>
+
+#include <stdint.h>         // int64_t
+
+#include <chrono>           // std::chrono::*
+#include <ratio>            // std::(milli, micro, nano)
+#include <type_traits>      // std::conditional
+
+namespace my_chrono {
+    namespace chrono = std::chrono;
+    using std::conditional_t, std::milli, std::micro, std::nano;
+
+    using Timer_clock = conditional_t<chrono::high_resolution_clock::is_steady,
+        chrono::high_resolution_clock,
+        chrono::steady_clock
+        >;
+    using Time_point    = Timer_clock::time_point;  // Result of static member `now()`.
+    using Duration      = Timer_clock::duration;    // Difference type of time points.
+
+    template< class Rep, class Period >
+    inline auto as_seconds( const chrono::duration<Rep, Period> duration_value )
+        -> double
+    { return chrono::duration<double>( duration_value ).count(); }
+
+    template< class Rep, class Period >
+    inline auto as_milliseconds( const chrono::duration<Rep, Period> duration_value )
+        -> double
+    { return chrono::duration<double, milli>( duration_value ).count(); }
+
+    template< class Rep, class Period >
+    inline auto as_microseconds( const chrono::duration<Rep, Period> duration_value )
+        -> double
+    { return chrono::duration<double, micro>( duration_value ).count(); }
+
+    template< class Rep, class Period >
+    inline auto as_nanoseconds( const chrono::duration<Rep, Period> duration_value )
+        -> double
+    { return chrono::duration<double, nano>( duration_value ).count(); }
+
+    inline auto min_of( const Duration& a, const Duration& b )
+        -> Duration
+    { return (a < b? a : b); }
+
+    inline auto max_of( const Duration& a, const Duration& b )
+        -> Duration
+    { return (a > b? a : b); }
+
+    struct Measurement
+    {
+        const Duration      duration;
+        const int64_t       n_iterations;
+        
+        auto average_seconds() const
+            -> double
+        { return as_seconds( duration )/n_iterations; }
+    };
+
+    template< class Func >
+    inline auto time_per( const Func& f )
+        -> Measurement
+    {
+        Duration time_a;
+        int64_t n = 1;
+        for( ;; ) {
+            const Time_point a_start = Timer_clock::now();
+            for( int64_t i = 1; i <= n; ++i ) {
+                f();
+            }
+            time_a = Timer_clock::now() - a_start;
+            if( time_a > Duration::zero() ) {
+                break;
+            }
+            n *= 2;
+        }
+
+        Duration time_b = time_a;
+        while( time_b < min_of( chrono::seconds( 1 ), 1000*time_a ) ) {
+            n *= 2;
+            Time_point b_start = Timer_clock::now();
+            for( int64_t i = 1; i <= n; ++i ) {
+                f();
+            }
+            time_b = Timer_clock::now() - b_start;
+        }
+        return Measurement{ time_b, n };
+    }
+
+}  // namespace my_chrono
+~~~
+
+Re-expressed with `my_chrono::time_for` the wait resolution checking program can look like this:
+
+[*<small>explore/adaptive-wait-resolution.cpp</small>*](source/explore/adaptive-wait-resolution.cpp)
+~~~cpp
+#include "../my_chrono.hpp"
+using
+    my_chrono::Timer_clock, my_chrono::Duration, my_chrono::as_seconds,
+    my_chrono::Measurement, my_chrono::time_per;
+namespace chrono = std::chrono;
+
+#include <algorithm>        // std::max
+#include <type_traits>      // std::is_same_v
+#include <iomanip>          // std::setw
+#include <iostream>         // std::(cout, endl)
+#include <thread>           // std::this_thread::*
+using 
+    std::is_same_v,
+    std::fixed, std::left, std::right, std::setw, std::setprecision,
+    std::cout, std::endl;
+namespace this_thread = std::this_thread;
+
+auto main()
+    -> int
+{
+    const bool using_steady_clock = is_same_v<Timer_clock, chrono::steady_clock>;
+    const auto clock_name = (using_steady_clock? "steady_clock" : "high_resolution_clock");
+    cout << "Using std::" << clock_name << "." << endl;
+    
+    cout << fixed << setprecision( 12 );
+    for(    Duration resolution = chrono::seconds( 1 );
+            resolution >= chrono::microseconds( 1 );
+            resolution /= 2 ) {
+        const Measurement m = time_per( [&]{ this_thread::sleep_for( resolution ); } );
+        cout
+            << "Interval " << as_seconds( resolution ) << " secs"
+            << " measured as " << m.average_seconds()
+            << " using " << setw( 5 ) << m.n_iterations << " iterations."
+            << endl;
+    }
+}
+~~~
+
+Output with MinGW g++ 9.2 in Windows 10, optimization option `-O3`:
+
+~~~txt
+Using std::steady_clock.
+Interval 1.000000000000 secs measured as 1.001213000000 using     1 iterations.
+Interval 0.500000000000 secs measured as 0.505674500000 using     2 iterations.
+Interval 0.250000000000 secs measured as 0.250361500000 using     4 iterations.
+Interval 0.125000000000 secs measured as 0.125393750000 using     8 iterations.
+Interval 0.062500000000 secs measured as 0.063906687500 using    16 iterations.
+Interval 0.031250000000 secs measured as 0.031939593750 using    32 iterations.
+Interval 0.015625000000 secs measured as 0.016092640625 using    64 iterations.
+Interval 0.007812500000 secs measured as 0.008194554687 using   128 iterations.
+Interval 0.003906250000 secs measured as 0.004214875000 using   256 iterations.
+Interval 0.001953125000 secs measured as 0.001998855469 using   512 iterations.
+Interval 0.000976562000 secs measured as 0.000999410156 using  1024 iterations.
+Interval 0.000488281000 secs measured as 0.000999448242 using  1024 iterations.
+Interval 0.000244140000 secs measured as 0.000999448242 using  1024 iterations.
+Interval 0.000122070000 secs measured as 0.001027305664 using  1024 iterations.
+Interval 0.000061035000 secs measured as 0.000999428711 using  1024 iterations.
+Interval 0.000030517000 secs measured as 0.001026266602 using  1024 iterations.
+Interval 0.000015258000 secs measured as 0.001027162109 using  1024 iterations.
+Interval 0.000007629000 secs measured as 0.000999449219 using  1024 iterations.
+Interval 0.000003814000 secs measured as 0.000999427734 using  1024 iterations.
+Interval 0.000001907000 secs measured as 0.000999447266 using  1024 iterations.
+~~~
+
+Graph of these numbers produced by Excel:
+
+<img src="images/adaptive-wait-resolution.cropped.png">
+
+The code is simpler and probably more reliable, and the results show clearly that for this compiler the `sleep_for` resolution, its minimum waiting time, is roughly 1 millisecond.
+
+---
+#### Separate setup and tear-down code from the code of interest.
+
+The original problem of measuring iterative merge-sort of an already sorted sequence, can’t be solved by *directly* applying `my_chrono::time_per`. That’s because `time_per` depends on possibly executing the given code a great number of times, and that time would include preparation of a sorted linked list, **setup**, and destruction and deallocation of the list, **tear-down** (a.k.a. cleanup), for each of the *n* executions of the **code of interest**, the actual iterative merge sorting. The time for the sorting is likely to drown completely in the times for creation and destruction of a linked list of words.
+
+
+This was not a problem for a single execution, because then one could just note the time right before executting the code of interest, like
+
+~~~cpp
+    setup_code();
+    const auto start_time = Timer::now();
+    code_of_interest();
+    const auto end_time = Timer::now();
+    // OK, measured only the code of interest.
+    tear_down_code();
+~~~
+
+… but with a loop, especially a loop executing a single functor, all these code parts may need to be within the loop body:
+
+~~~cpp
+    const auto start_time = Timer::now();
+    for( int i = 1; i <= 1000; ++i ) {
+        setup_code();
+        code_of_interest();
+        tear_down_code();
+    }
+    const auto end_time = Timer::now();
+    // Gah, the total time includes the total (multiple) setup & tear-down code times!
+~~~
+
+If the computer has enough resources then the tear-down can be postponed to after the measurement. That doesn’t directly address the issue of setup code execution in the loop, but it means that one retains all the created objects until after the final measurement. And since that has to involve e.g. a `vector` of lists outside the functor to be executed, one can pre-prepare (so to speak) a sufficient number of lists in that `vector`.
+
+More generally, the outlined approach is to
+
+* prepare a sufficient number of data sets in e.g. a `vector` external to the code-of-interest functor, and retain these sets till until after the measurement.
+
+For this scheme there is a possibility that one has not prepared enough lists, or whatever data is needed, and if that happens then one can use a similar scheme as within `time_for`, namely to
+
+* double the number of data sets *n* and try again.
+
+However, if one gets the near the limit of how much memory can be allocated then the OS might engage in frenetic needless swapping to disk, called [**trashing**](https://en.wikipedia.org/wiki/Thrashing_(computer_science)), whence the system gets slower and slower and eventually effectively hangs, and where anyway measurements are worthless. And so there should be a reasonable-for-the-system cap on the number of resources. And if that resource limit is exceeded then the measurement attempt has failed.
+
+In our case 58 000+ nodes is measured in kilobytes; a thousand (say) such lists is measured in megabytes; and a common PC has gigabytes of main memory. So, there is little chance of resource contention even with e.g. 2049 lists. So, let’s just try that:
+
+
+xxx
+
+
+
+#### Possible other approaches.
+
+Possible other approaches include:
+
+* Use a separate thread to inspect, at regular short intervals, which code part the code execution is in — setup, code of interest or tear-down. This gives a statistical measure of relative times. The assumption (perhaps worth checking!) is that updating an atomic variable representing the current code part, takes insignificant time relative to the code of interest.
+* Measure the time of setup and possibly also tear-down, separately, in addition to measuring the combined time with the code of interest.
+* Use a system specific timer with much higher in-practice guaranteed resolution than the C++ standard library’s 0.02 secs, e.g. in Windows use Windows’ `QueryPerformanceCounter` function with usually better than 0.000001 secs.
+
+The asynchronous sampling first approach is probably best done by employing a tool for code execution **profiling**, because that’s what it’s all about. No need to implement it yourself when you probably already have a tool, e.g. your IDE, that can do it for you. However, here we’ll use an all C++ code approach, to avoid getting tool-specific, and since the first approach is complex as C++ code we’ll use one of the other approaches.
 
 
 
