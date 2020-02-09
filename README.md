@@ -3279,7 +3279,7 @@ Provided the code of interest takes less than 1 second, it’s roughly guarantee
 
 However, setup and tear-down, here preparing and finally destroying about 2000 linked lists each of 85 000+ words, can take so much time that one starts to wonder whether any real progress is made inside that process (let it run to completion), or is it perhaps **hanging** (kill it and try to figure out why)?
 
-Sometimes, and in this case, one can address that information void issue simply by adding logging calls. I used `std::clog` here, because that's easy to suppress by redirecting the standard error stream in the command to run the program, and I wrapped the logging in a function that adds a special prefix to each log line, so that the log lines also can be easily removed afterwards. There are a zillion + 1 ways of doing this, but `clog` is easy and often enough.
+Sometimes, and in this case, one can address that information void issue simply by adding logging calls. I used `std::clog` here, because that's easy to suppress by redirecting the standard error stream in the command to run the program, and I wrapped the logging in a function that adds a special prefix to each log line so that the log lines also can be easily removed afterwards. There are a zillion + 1 ways of doing this, but `clog` is easy and often enough.
 
 #### Possible other approaches.
 
