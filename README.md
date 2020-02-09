@@ -3285,7 +3285,7 @@ Sometimes, and in this case, one can address that information void issue simply 
 
 Possible other approaches include:
 
-* Use a separate thread to inspect, at regular short intervals, which code part the code execution is in — setup, code of interest or tear-down. This gives a statistical measure of relative times. The assumption (perhaps worth checking!) is that updating an atomic variable representing the current code part, takes insignificant time relative to the code of interest.
+* Use a separate thread to inspect, at regular or random short intervals, which code part the code execution is in — setup, code of interest or tear-down. This gives a statistical measure of relative times. The assumption (perhaps worth checking!) is that updating an atomic variable representing the current code part, takes insignificant time relative to the code of interest.
 * Measure the time of setup and possibly also tear-down, separately, in addition to measuring the combined time with the code of interest.
 * Use a system specific timer with much higher in-practice guaranteed resolution than the C++ standard library’s 0.02 secs, e.g. in Windows use Windows’ `QueryPerformanceCounter` function with usually better than 0.000001 secs.
 
