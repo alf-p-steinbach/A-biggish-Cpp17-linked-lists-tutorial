@@ -42,7 +42,7 @@ It’s mostly about *understanding* things, which is necessary for analysis and 
   - [3.6 Insert in sorted position in a pointer based list.](#36-insert-in-sorted-position-in-a-pointer-based-list)
   - [3.7 Find and remove nodes in a pointer list.](#37-find-and-remove-nodes-in-a-pointer-list)
 - [4. Sorting a singly linked list.](#4-sorting-a-singly-linked-list)
-  - [4.1 Use the Corncob free list of >58 000 English words as data.](#41-use-the-corncob-free-list-of-58%C2%A0000-english-words-as-data)
+  - [4.1 Use the Corncob free list of >58 000 English words as data.](#41-use-the-corncob-free-list-of-58000-english-words-as-data)
   - [4.2. `Node` and `List` classes, and an `english_words_list()` function.](#42-node-and-list-classes-and-an-english_words_list-function)
   - [4.3. Randomize a list efficiently.](#43-randomize-a-list-efficiently)
   - [4.4. Merge-sort a list recursively.](#44-merge-sort-a-list-recursively)
@@ -53,6 +53,7 @@ It’s mostly about *understanding* things, which is necessary for analysis and 
     - [Ensure reasonably short timings, not just reasonably long.](#ensure-reasonably-short-timings-not-just-reasonably-long)
     - [Adapt the measuring to the code being measured.](#adapt-the-measuring-to-the-code-being-measured)
     - [Separate setup and tear-down code from the code of interest.](#separate-setup-and-tear-down-code-from-the-code-of-interest)
+    - [Add suppressable logging to see what’s going on.](#add-suppressable-logging-to-see-whats-going-on)
     - [Possible other approaches.](#possible-other-approaches)
   - [](#)
 - [asd](#asd)
@@ -3154,10 +3155,131 @@ However, if one gets the near the limit of how much memory can be allocated then
 
 In our case 58 000+ nodes is measured in kilobytes; a thousand (say) such lists is measured in megabytes; and a common PC has gigabytes of main memory. So, there is little chance of resource contention even with e.g. 2049 lists. So, let’s just try that:
 
+[*<small>sorting_singly_linked/merge_sort_iteratively_result.adaptive_timing.cpp</small>*](source/sorting_singly_linked/merge_sort_iteratively_result.adaptive_timing.cpp)
+~~~cpp
+#include "../my_chrono.hpp"
+#include "../my_random.hpp"
+using my_chrono::Measurement, my_chrono::time_per;
 
-xxx
+#include "shuffled_english_words_list.hpp"
+#include "merge_sort_iteratively.hpp"
+namespace x = oneway_sorting_examples;
+using
+    x::english_words_list, x::shuffled_english_words_list,
+    x::Node, x::List, x::merge_sort_iteratively;
+using Words_list_func = auto()->List;
 
+#include <iomanip>          // std::setw
+#include <iostream>         // std::(fixed, cout, clog, endl)    
+#include <limits>           // std::numeric_limits
+#include <optional>         // std::optional
+#include <stdexcept>        // std::(exception, runtime_error)
+#include <string>
+#include <vector>           // std::vector;
+using
+    std::exception, std::runtime_error, std::string, std::to_string, std::vector,
+    std::numeric_limits, std::optional,
+    std::setw, std::fixed, std::cout, std::clog, std::endl;
 
+void log( const string& s )
+{
+    // Turn off logging output by redirecting the error stream, e.g. in Windows `a 2>nul`.
+    clog << "- " << s << endl;
+}
+    
+auto seconds_for( Words_list_func& words_list )
+    -> optional<double>
+{
+    log( "Preparing data." );
+    vector<List> words( 2049, words_list() );
+    const int n_lists = words.size();
+    int n_sorted = 0;
+
+    log( "Measuring" );
+    const Measurement   m           = time_per( [&]
+    {
+        if( n_sorted == n_lists ) { throw runtime_error( "Too few prepared lists." ); }
+        merge_sort_iteratively( words[n_sorted] );
+        ++n_sorted;
+    } );
+    log( "Used " + to_string( m.n_iterations ) + " iterations for the measuring." );
+
+    log( "Cleanup." );
+    for( int i = 0; i < n_sorted; ++i ) {
+        if( not words[i].is_sorted() ) {
+            return {};
+        }
+    }
+    return m.average_seconds();
+}
+
+void cpp_main()
+{
+    cout << fixed;
+    cout    << "Iterative \"natural runs\" merge-sort results in seconds, for "
+            << english_words_list().count() << " words:"
+            << endl;
+    cout << endl;
+    const auto w = setw( 16 );
+    cout << w << "Sorted data:" << w << "Shuffled data:" << w << "Diff:" << endl;
+    for( int i = 1; i <= 12; ++i ) {
+        constexpr double nan = numeric_limits<double>::quiet_NaN();
+        const auto& sorted_words    = *english_words_list;
+        const auto& shuffled_words  = *[]{ return shuffled_english_words_list(); };
+
+        const double sorted_time    = seconds_for( sorted_words ).value_or( nan );
+        const double shuffled_time  = seconds_for( shuffled_words ).value_or( nan );
+        cout    << w << sorted_time
+                << w << shuffled_time
+                << w << shuffled_time - sorted_time
+                << endl;
+    }
+}
+
+auto main()
+    -> int
+{
+    try {
+        cpp_main();
+        return EXIT_SUCCESS;
+    } catch( const exception& x ) {
+        clog << "!" << x.what() << endl;
+    }
+    return EXIT_FAILURE;
+}
+~~~
+
+This code does not include the possible outer loop of doubling the number of prepared data sets, because that turned out to not be necessary.
+
+Results with MinGW g++ 9.2 in Windows 10, optimization option `-O3`:
+
+~~~txt
+Iterative "natural runs" merge-sort results in seconds, for 58112 words:
+
+    Sorted data:  Shuffled data:           Diff:
+        0.001836        0.071252        0.069415
+        0.002079        0.063384        0.061305
+        0.001840        0.068578        0.066738
+        0.002442        0.067994        0.065552
+        0.001782        0.064982        0.063200
+        0.001831        0.064366        0.062534
+        0.001822        0.087337        0.085515
+        0.002210        0.076595        0.074385
+        0.002148        0.092640        0.090492
+        0.002363        0.072504        0.070141
+        0.002254        0.082263        0.080009
+        0.002002        0.069818        0.067816
+~~~
+
+Note: this results presentation does not give any idea how long the program took to complete.
+
+#### Add suppressable logging to see what’s going on.
+
+Provided the code of interest takes less than 1 second, it’s roughly guaranteed that each call to `my_chrono::time_per` will not take much more than 1 second, because that’s the cap it places on total time — it just assumes that any measured interval in that range has at least 3 significant digits.
+
+However, setup and tear-down, here preparing and finally destroying about 2000 linked lists each of 85 000+ words, can take so much time that one starts to wonder whether any real progress is made inside that process (let it run to completion), or is it perhaps **hanging** (kill it and try to figure out why)?
+
+Sometimes, and in this case, one can address that information void issue simply by adding logging calls. I used `std::clog` here, because that's easy to suppress by redirecting the standard error stream in the command to run the program, and I wrapped the logging in a function that adds a special prefix to each log line, so that the log lines also can be easily removed afterwards. There are a zillion + 1 ways of doing this, but `clog` is easy and often enough.
 
 #### Possible other approaches.
 
