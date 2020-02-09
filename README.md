@@ -3167,7 +3167,9 @@ Possible other approaches include:
 * Measure the time of setup and possibly also tear-down, separately, in addition to measuring the combined time with the code of interest.
 * Use a system specific timer with much higher in-practice guaranteed resolution than the C++ standard library’s 0.02 secs, e.g. in Windows use Windows’ `QueryPerformanceCounter` function with usually better than 0.000001 secs.
 
-The asynchronous sampling first approach is probably best done by employing a tool for code execution **profiling**, because that’s what it’s all about. No need to implement it yourself when you probably already have a tool, e.g. your IDE, that can do it for you.  Disclaimer: I haven’t done this, and I haven’t read anything about it that I recall, so it is perhaps not a common approach, but I see no particular problem with it.
+The asynchronous sampling first approach is probably best done by employing a tool for code execution **profiling**, because that’s what it’s all about — no need to implement it yourself when you probably already have a tool, e.g. your IDE, that can do it for you.
+
+Disclaimer: I haven’t tried using a profiling tool for the sampling approach, and I haven’t read anything about it that I recall, so it is perhaps not common, but I see no particular problem with it.
 
 
 
