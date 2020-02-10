@@ -3289,9 +3289,13 @@ Possible other approaches include:
 * Measure the time of setup and possibly also tear-down, separately, in addition to measuring the combined time with the code of interest.
 * Use a system specific timer with much higher in-practice guaranteed resolution than the C++ standard library’s 0.02 secs, e.g. in Windows use Windows’ `QueryPerformanceCounter` function with usually better than 0.000001 secs.
 
-The asynchronous sampling first approach is probably best done by employing a tool for code execution **profiling**, because that’s what it’s all about — no need to implement it yourself when you probably already have a tool, e.g. your IDE, that can do it for you.
+The asynchronous sampling first approach is probably best done by employing a tool for code execution profiling, because that’s what it’s all about — no need to implement it yourself when you probably already have a tool, e.g. your IDE, that can do it for you.
 
-Disclaimer: I haven’t tried using a profiling tool for the sampling approach, and I haven’t read anything about it that I recall, so it is perhaps not common, but I see no particular problem with it.
+*Disclaimer: I haven’t tried using a profiling tool for the sampling approach, and I haven’t read anything about it that I recall, so it is perhaps not common, but I see no particular problem with it other than possibly too low resolution.*
+
+The second approach, measuring setup and tear-down times separately, can be reasonable for a manual single measurement. It gets less reasonable for a sequence of measurements, like those shown for the sorting. Also, it can be more complex to abstract in a function like `time_per`. One possible design is to pass `time_per` a functor taking a boolean argument that specifies whether to execute (also) the code of interest, or only the setup and tear-down code. Or, the simpler basic `time_per` function as shown, can be used directly, with no abstraction of the logic of separate measurements.
+
+The third approach, using system specific functionality, while not as portable, has the great advantage that it ***can save a lot of time***. Instead of waiting for the excruciatingly slow creation and destruction of 2000+ linked lists each of 85 000+ nodes, one can simply measure the single sorting of a single such list. That’s what sufficient timer resolution, a.k.a. not unreasonable low quality, buys: time, and thereby also reduced frustration and improved continuity of work, all of which can be important.
 
 
 
