@@ -3145,7 +3145,7 @@ If the computer has enough resources then the tear-down can be postponed to afte
 
 More generally, the outlined approach is to
 
-* prepare a sufficient number of data sets in e.g. a `vector` external to the code-of-interest functor, and retain these sets till until after the measurement.
+* prepare a sufficient number of data sets in e.g. a `vector` external to the code-of-interest functor, and retain these sets until after the measurement.
 
 For this scheme there is a possibility that one has not prepared enough lists, or whatever data is needed, and if that happens then one can use a similar scheme as within `time_for`, namely to
 
