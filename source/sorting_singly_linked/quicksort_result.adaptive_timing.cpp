@@ -3,11 +3,11 @@
 using my_chrono::Measurement, my_chrono::time_per;
 
 #include "shuffled_english_words_list.hpp"
-#include "merge_sort_iteratively.hpp"
+#include "quicksort.hpp"
 namespace x = oneway_sorting_examples;
 using
     x::english_words_list, x::shuffled_english_words_list,
-    x::Node, x::List, x::merge_sort_iteratively;
+    x::Node, x::List, x::quicksort;
 using Words_list_func = auto()->List;
 
 #include <iomanip>          // std::setw
@@ -27,20 +27,20 @@ void log( const string& s )
     // Turn off logging output by redirecting the error stream, e.g. in Windows `a 2>nul`.
     clog << "- " << s << endl;
 }
-    
+
 auto seconds_for( Words_list_func& words_list )
     -> optional<double>
 {
     log( "Preparing data." );
-    vector<List> words( 2049, words_list() );
-    const int n_lists = static_cast<int>( words.size() );
+    vector<List> words( 128, words_list() );
+    const int n_lists = int( words.size() );
     int n_sorted = 0;
 
     log( "Measuring" );
     const Measurement   m           = time_per( [&]
     {
         if( n_sorted == n_lists ) { throw runtime_error( "Too few prepared lists." ); }
-        merge_sort_iteratively( words[n_sorted] );
+        quicksort( words[n_sorted] );
         ++n_sorted;
     } );
     log( "Used " + to_string( m.n_iterations ) + " iterations for the measuring." );
@@ -48,6 +48,18 @@ auto seconds_for( Words_list_func& words_list )
     log( "Cleanup." );
     for( int i = 0; i < n_sorted; ++i ) {
         if( not words[i].is_sorted() ) {
+            std::string_view previous = words[i].head->value;
+            int count = 0;
+            for( Node* p = words[i].head->next; p; p = p->next ) {
+                std::string_view current = p->value;
+                ++count;
+                if( not (previous <= current) ) {
+                    clog << "- #" << count << ": " << previous << " then " << current << endl;
+                    break;
+                }
+                previous = current;
+            }
+            clog << "- !Returning ungood." << endl;
             return {};
         }
     }
@@ -57,7 +69,7 @@ auto seconds_for( Words_list_func& words_list )
 void cpp_main()
 {
     cout << fixed;
-    cout    << "Iterative \"natural runs\" merge-sort results in seconds, for "
+    cout    << "Quicksort results in seconds, for "
             << english_words_list().count() << " words:"
             << endl;
     cout << endl;

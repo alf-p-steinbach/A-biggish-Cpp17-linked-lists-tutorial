@@ -38,6 +38,8 @@ namespace oneway_sorting_examples {
         Appender( const Appender& ) = delete;
 
     public:
+        auto last() const -> Node* { return m_last; }
+
         Appender( Node*& a_head_pointer ) noexcept:
             m_head( a_head_pointer ),
             m_last( nullptr )

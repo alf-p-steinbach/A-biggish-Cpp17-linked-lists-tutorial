@@ -46,8 +46,9 @@ auto main()
     cout << w << "Sorted data:" << w << "Shuffled data:" << w << "Diff:" << endl;
     for( int i = 1; i <= 12; ++i ) {
         constexpr double nan = numeric_limits<double>::quiet_NaN();
+        using F = Words_list_func*;
         const auto& sorted_words    = *english_words_list;
-        const auto& shuffled_words  = *[]{ return shuffled_english_words_list(); };
+        const auto& shuffled_words  = *F( []{ return shuffled_english_words_list(); } );
 
         const double sorted_time    = seconds_for( sorted_words ).value_or( nan );
         const double shuffled_time  = seconds_for( shuffled_words ).value_or( nan );

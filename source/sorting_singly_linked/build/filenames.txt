@@ -2,5 +2,7 @@ array_shuffle_result
 english_words_list_result
 merge_shuffle_result
 merge_sort_iteratively_result
+merge_sort_iteratively_result.adaptive_timing
 merge_sort_recursively_result
+quicksort_result.adaptive_timing
 shuffled_english_words_list_result

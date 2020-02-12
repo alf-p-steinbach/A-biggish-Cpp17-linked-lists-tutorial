@@ -55,6 +55,7 @@ It’s mostly about *understanding* things, which is necessary for analysis and 
     - [Separate setup and tear-down code from the code of interest.](#separate-setup-and-tear-down-code-from-the-code-of-interest)
     - [Add suppressable logging to see what’s going on.](#add-suppressable-logging-to-see-whats-going-on)
     - [Possible other approaches.](#possible-other-approaches)
+  - [4.7. Quicksort of a singly linked list ⇒ “Complex-sort”.](#47-quicksort-of-a-singly-linked-list-%E2%87%92-complex-sort)
   - [](#)
 - [asd](#asd)
 
@@ -1859,6 +1860,8 @@ namespace oneway_sorting_examples {
         Appender( const Appender& ) = delete;
 
     public:
+        auto last() const -> Node* { return m_last; }
+
         Appender( Node*& a_head_pointer ) noexcept:
             m_head( a_head_pointer ),
             m_last( nullptr )
@@ -2529,8 +2532,9 @@ auto main()
     cout << w << "Sorted data:" << w << "Shuffled data:" << w << "Diff:" << endl;
     for( int i = 1; i <= 12; ++i ) {
         constexpr double nan = numeric_limits<double>::quiet_NaN();
+        using F = Words_list_func*;
         const auto& sorted_words    = *english_words_list;
-        const auto& shuffled_words  = *[]{ return shuffled_english_words_list(); };
+        const auto& shuffled_words  = *F( []{ return shuffled_english_words_list(); } );
 
         const double sorted_time    = seconds_for( sorted_words ).value_or( nan );
         const double shuffled_time  = seconds_for( shuffled_words ).value_or( nan );
@@ -2563,7 +2567,7 @@ Recursive merge-sort results in seconds, for 58112 words:
         0.030034        0.039993        0.009959
 ~~~
 
-Compared to 0.012 seconds for a shuffle, 0.036 or so for the sort is 3 times slower. In theory a shuffle is just a sort, namely reorganizing the data into a chosen random permutation. But in practice the shuffle differs both in being simpler and in being faster.
+Compared to 0.012 seconds for a shuffle, 0.033 or so for the sort is roughly 3 times slower. In theory a shuffle is just a sort, namely reorganizing the data into a chosen random permutation. But in practice the shuffle differs both in being simpler and in being faster.
 
 From several runs it looks as if sorting the shuffled data is slightly faster (or less slow) than sorting the already sorted original data, but this may be just my perception.
 
@@ -2745,8 +2749,9 @@ auto main()
     cout << w << "Sorted data:" << w << "Shuffled data:" << w << "Diff:" << endl;
     for( int i = 1; i <= 12; ++i ) {
         constexpr double nan = numeric_limits<double>::quiet_NaN();
+        using F = Words_list_func*;
         const auto& sorted_words    = *english_words_list;
-        const auto& shuffled_words  = *[]{ return shuffled_english_words_list(); };
+        const auto& shuffled_words  = *F( []{ return shuffled_english_words_list(); } );
 
         const double sorted_time    = seconds_for( sorted_words ).value_or( nan );
         const double shuffled_time  = seconds_for( shuffled_words ).value_or( nan );
@@ -3192,7 +3197,7 @@ auto seconds_for( Words_list_func& words_list )
 {
     log( "Preparing data." );
     vector<List> words( 2049, words_list() );
-    const int n_lists = words.size();
+    const int n_lists = static_cast<int>( words.size() );
     int n_sorted = 0;
 
     log( "Measuring" );
@@ -3224,8 +3229,9 @@ void cpp_main()
     cout << w << "Sorted data:" << w << "Shuffled data:" << w << "Diff:" << endl;
     for( int i = 1; i <= 12; ++i ) {
         constexpr double nan = numeric_limits<double>::quiet_NaN();
+        using F = Words_list_func*;
         const auto& sorted_words    = *english_words_list;
-        const auto& shuffled_words  = *[]{ return shuffled_english_words_list(); };
+        const auto& shuffled_words  = *F( []{ return shuffled_english_words_list(); } );
 
         const double sorted_time    = seconds_for( sorted_words ).value_or( nan );
         const double shuffled_time  = seconds_for( shuffled_words ).value_or( nan );
@@ -3298,6 +3304,292 @@ The second approach, measuring setup and tear-down times separately, can be reas
 The third approach, using system specific functionality, while not as portable, has the great advantage that it ***can save a lot of time***. Instead of waiting for the excruciatingly slow creation and destruction of 2000+ linked lists each of 85 000+ nodes, one can simply measure the single sorting of a single such list. That’s what sufficient timer resolution, a.k.a. not unreasonable low quality, buys: time, and thereby also reduced frustration and improved continuity of work, all of which can be important.
 
 
+### 4.7. Quicksort of a singly linked list ⇒ “Complex-sort”.
+
+Recall that [Quicksort](https://en.wikipedia.org/wiki/Quicksort) is a divide and conquer sort where the sorting action is in the partitioning of values, namely, all those less than a per partitioning chosen pivot value go to the first part, and the rest to the second part.
+
+For an array this is usually quite fast because with an array one can O(1) inspect the ends and the middle, say, in order to choose a suitable pivot value; moving items to the proper parts can be done efficiently by exchanging out of order items; and the final merging of the two sorted parts is an infinitely fast null-operation, zero time, since they’re in order in the array.
+
+Still, if the pivot value is consistently ungood then each partitioning may move just 1 item to the first part, and all the rest to the second part. And then Quicksort [reduces to an O(*n*²) selection sort](https://www.cs.dartmouth.edu/~doug/mdmspe.pdf). For this reason Quicksort is usually modified in some way to ensure O(*n*⋅log(*n*)) behavior, e.g. [Introsort](https://en.wikipedia.org/wiki/Introsort), and also to make it faster for short sequences (which also means, at the bottom levels of recursion) by switching to some simpler non-recursive sort algorithm.
+
+Such modifications are additional complexity that’s just ignored here.
+
+For a minimal singly linked list such as `std::forward_list` merging of the two sorted parts is an O(*n*) operation, but if each list maintains a pointer to the last node then it can be done in O(1) time. Such a pointer can also be used to inspect the last value in order to choose a reasonable pivot value. Since it would be inefficient to inspect the middle value in a linked list, instead of choosing the median of first, middle and last one can choose the average of the first and last.
+
+The standard library provides no “average” of two strings operation, so defining that is part of implementing Quicksort for lists — at least when one decides to use averaging for the pivot value. 
+
+A more general problem with Quicksort is that one risks infinite recursion when the sequence consists of just the same value repeated *ad nauseam*. And with an average-computed pivot one risks incorrect sorting when a subsequence to be sorted starts and ends with the same value that is smaller or equal to all the other values. I (re-) learned that the hard way, by debugging a very mysterious behavior, and discovering that the great word list contains the word “brake” twice! This problem can be resolved in many different ways, including adding O(*n*) information to make all values unique, but I chose to simply maintain a flip-flopping index, switching between 0 and 1, for which part to put values equal to the pilot value in.
+
+[*<small>sorting_singly_linked/quicksort.hpp</small>*](source/sorting_singly_linked/quicksort.hpp)
+~~~cpp
+#pragma once
+#include "List.hpp"
+
+#include <assert.h>     // assert
+#include <limits.h>     // CHAR_BIT
+
+#include <algorithm>    // std::max
+#include <array>        // std::array
+#include <functional>   // std::invoke
+#include <utility>      // std::exchange
+
+namespace oneway_sorting_examples {
+    using std::invoke, std::max, std::array, std::exchange, std::string_view, std::string;
+    
+    class Quicksort
+    {
+        int     m_flipflopping_index = 0;
+
+        inline static auto average_of( const string_view& a, const string_view& b )
+            -> string;
+
+        struct Joinable_list;
+        inline void sort( Joinable_list& list );
+        
+    public:
+        inline Quicksort( List& list );
+    };
+
+    inline void quicksort( List& list )
+    {
+        (void) Quicksort( list );
+    }
+
+    inline auto Quicksort::average_of( const string_view& a, const string_view& b )
+        -> string
+    {
+        using Byte = unsigned char;
+        constexpr int bits_per_byte = CHAR_BIT;
+
+        string result;
+        const int n_codes = static_cast<int>( max( a.length(), b.length() ) );
+        result.resize( n_codes + 1 );
+        
+        // result = a + b;
+        unsigned carry = 0;
+        for( int i = n_codes - 1;  i >= 0; --i ) {
+            const unsigned code_a = (i >= int( a.size() )? 0u : Byte( a[i] ));
+            const unsigned code_b = (i >= int( b.size() )? 0u : Byte( b[i] ));
+            const unsigned sum = code_a + code_b + carry;
+            result[i] = char( sum & Byte( -1 ) );
+            carry = sum >> bits_per_byte;
+        }
+        
+        // result /= 2;
+        for( int i = 0; i < n_codes + 1; ++i ) {
+            const int new_msb = carry;
+            carry = Byte( result[i] )%2;
+            result[i] = char( Byte( result[i] )/2 + (new_msb << (bits_per_byte - 1)) );
+        }
+        if( result[n_codes] == 0 ) {
+            result.resize( n_codes );
+        }
+        return result;
+    }
+
+    struct Quicksort::Joinable_list
+    {
+        Node*   head;
+        Node*   last;
+        
+        friend auto joined( Joinable_list& a, Joinable_list& b )
+            -> Joinable_list
+        {
+            (a.head? a.last->next : a.head) = b.head;
+            if( b.last ) { a.last = b.last; }
+            b = Joinable_list();
+            return exchange( a, Joinable_list() );
+        }
+    };
+
+    void Quicksort::sort( Joinable_list& list )
+    {
+        // Recursion base case: a list with n <= 1 nodes is necessarily sorted.
+        if( not list.head or not list.head->next ) {
+            return;
+        }
+        
+        array<Joinable_list, 2> parts = {};
+        
+        // Divide the nodes to parts so that every parts[0] value < every parts[1] value.
+        {
+            const string pivot = average_of( list.head->value, list.last->value );
+
+            #ifdef QUICKSORT_WITH_ASSERTS
+                [[maybe_unused]] auto& v1 = list.head->value;
+                [[maybe_unused]] auto& vn = list.last->value;
+                assert( (v1 <= pivot) == (v1 <= vn) );
+                assert( (pivot <= vn) == (v1 <= vn) );
+            #endif
+
+            array<List::Appender, 2> appenders = {parts[0].head, parts[1].head};
+            while( list.head ) {
+                const int i = invoke( [&]() -> int
+                {
+                    const int cresult = list.head->value.compare( pivot );
+                    if( cresult < 0 ) {
+                        return 0;
+                    } else if( cresult > 0 ) {
+                        return 1;
+                    } else { // equal values
+                        m_flipflopping_index = 1 - m_flipflopping_index;
+                        return m_flipflopping_index;
+                    }
+                } );
+                    
+                appenders[i].append( unlinked( list.head ) );
+            }
+            for( int i = 0; i < 2; ++i ) { parts[i].last = appenders[i].last(); }
+            // At this point list.head == nullptr and list.last is invalid.
+        }
+
+        // Recurse:
+        for( auto& part: parts ) { sort( part ); }
+        
+        // Join the now sorted 2 parts in sorted order:
+        list = joined( parts[0], parts[1] );
+    }
+
+    inline Quicksort::Quicksort( List& list )
+    {
+        const auto p_last_node = List::Appender( list.head ).last();
+        Joinable_list jlist{ list.head, p_last_node };
+        sort( jlist );
+        list.head = jlist.head;
+    }
+}  // namespace oneway_sorting_examples
+~~~
+
+Measuring this an example of the oldest and probably most common code reuse technique on planet Earth, namely copy, paste and modify:
+
+[*<small>sorting_singly_linked/quicksort_result.adaptive_timing.cpp</small>*](source/sorting_singly_linked/quicksort_result.adaptive_timing.cpp)
+~~~cpp
+#include "../my_chrono.hpp"
+#include "../my_random.hpp"
+using my_chrono::Measurement, my_chrono::time_per;
+
+#include "shuffled_english_words_list.hpp"
+#include "quicksort.hpp"
+namespace x = oneway_sorting_examples;
+using
+    x::english_words_list, x::shuffled_english_words_list,
+    x::Node, x::List, x::quicksort;
+using Words_list_func = auto()->List;
+
+#include <iomanip>          // std::setw
+#include <iostream>         // std::(fixed, cout, clog, endl)    
+#include <limits>           // std::numeric_limits
+#include <optional>         // std::optional
+#include <stdexcept>        // std::(exception, runtime_error)
+#include <string>
+#include <vector>           // std::vector;
+using
+    std::exception, std::runtime_error, std::string, std::to_string, std::vector,
+    std::numeric_limits, std::optional,
+    std::setw, std::fixed, std::cout, std::clog, std::endl;
+
+void log( const string& s )
+{
+    // Turn off logging output by redirecting the error stream, e.g. in Windows `a 2>nul`.
+    clog << "- " << s << endl;
+}
+
+auto seconds_for( Words_list_func& words_list )
+    -> optional<double>
+{
+    log( "Preparing data." );
+    vector<List> words( 128, words_list() );
+    const int n_lists = int( words.size() );
+    int n_sorted = 0;
+
+    log( "Measuring" );
+    const Measurement   m           = time_per( [&]
+    {
+        if( n_sorted == n_lists ) { throw runtime_error( "Too few prepared lists." ); }
+        quicksort( words[n_sorted] );
+        ++n_sorted;
+    } );
+    log( "Used " + to_string( m.n_iterations ) + " iterations for the measuring." );
+
+    log( "Cleanup." );
+    for( int i = 0; i < n_sorted; ++i ) {
+        if( not words[i].is_sorted() ) {
+            std::string_view previous = words[i].head->value;
+            int count = 0;
+            for( Node* p = words[i].head->next; p; p = p->next ) {
+                std::string_view current = p->value;
+                ++count;
+                if( not (previous <= current) ) {
+                    clog << "- #" << count << ": " << previous << " then " << current << endl;
+                    break;
+                }
+                previous = current;
+            }
+            clog << "- !Returning ungood." << endl;
+            return {};
+        }
+    }
+    return m.average_seconds();
+}
+
+void cpp_main()
+{
+    cout << fixed;
+    cout    << "Quicksort results in seconds, for "
+            << english_words_list().count() << " words:"
+            << endl;
+    cout << endl;
+    const auto w = setw( 16 );
+    cout << w << "Sorted data:" << w << "Shuffled data:" << w << "Diff:" << endl;
+    for( int i = 1; i <= 12; ++i ) {
+        constexpr double nan = numeric_limits<double>::quiet_NaN();
+        using F = Words_list_func*;
+        const auto& sorted_words    = *english_words_list;
+        const auto& shuffled_words  = *F( []{ return shuffled_english_words_list(); } );
+
+        const double sorted_time    = seconds_for( sorted_words ).value_or( nan );
+        const double shuffled_time  = seconds_for( shuffled_words ).value_or( nan );
+        cout    << w << sorted_time
+                << w << shuffled_time
+                << w << shuffled_time - sorted_time
+                << endl;
+    }
+}
+
+auto main()
+    -> int
+{
+    try {
+        cpp_main();
+        return EXIT_SUCCESS;
+    } catch( const exception& x ) {
+        clog << "!" << x.what() << endl;
+    }
+    return EXIT_FAILURE;
+}
+~~~
+
+Typical result with MinGW g++ 9.2 in Windows 10, optimization option `-O3`, on my old laptop:
+
+~~~txt
+Quicksort results in seconds, for 58112 words:
+
+    Sorted data:  Shuffled data:           Diff:
+        0.025344        0.037540        0.012197
+        0.029400        0.035714        0.006315
+        0.025570        0.034448        0.008878
+        0.028940        0.034767        0.005827
+        0.027925        0.036479        0.008554
+        0.027080        0.035329        0.008249
+        0.025107        0.035413        0.010307
+        0.026566        0.034914        0.008348
+        0.028027        0.036109        0.008082
+        0.030957        0.036839        0.005882
+        0.026477        0.035288        0.008811
+        0.025157        0.035998        0.010840
+~~~
+
+Quicksort’s roughly 0.036 seconds for sorting a linked list of 58 000+ shuffled words is not much worse than the recursive merge sort’s 0.033 seconds for the same task. Perhaps with smart optimizations applied, or some other scheme for choosing the pivot, Quicksort might even be faster than the recursive merge sort. However, for a linked list the Quicksort implementation is quite complex, with some crucial non-intuitive details.
 
 
 
