@@ -55,7 +55,7 @@ It’s mostly about *understanding* things, which is necessary for analysis and 
     - [Separate setup and tear-down code from the code of interest.](#separate-setup-and-tear-down-code-from-the-code-of-interest)
     - [Add suppressable logging to see what’s going on.](#add-suppressable-logging-to-see-whats-going-on)
     - [Possible other approaches.](#possible-other-approaches)
-  - [4.7. Quicksort of a singly linked list ⇒ “Complex-sort”.](#47-quicksort-of-a-singly-linked-list-%E2%87%92-complex-sort)
+  - [4.7. Quicksort of a singly linked list ⇒ “Complex-sort”.](#47-quicksort-of-a-singly-linked-list--complex-sort)
   - [](#)
 - [asd](#asd)
 
