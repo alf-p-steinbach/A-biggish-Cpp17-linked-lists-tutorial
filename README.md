@@ -3460,7 +3460,7 @@ namespace oneway_sorting_examples {
 }  // namespace oneway_sorting_examples
 ~~~
 
-Measuring this an example of the oldest and probably most common code reuse technique on planet Earth, namely copy, paste and modify:
+Measuring this is an example of the oldest and probably most common code reuse technique on planet Earth, namely copy, paste and modify:
 
 [*<small>sorting_singly_linked/quicksort_result.adaptive_timing.cpp</small>*](source/sorting_singly_linked/quicksort_result.adaptive_timing.cpp)
 ~~~cpp
