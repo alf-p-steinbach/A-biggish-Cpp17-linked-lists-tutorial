@@ -56,6 +56,8 @@ It’s mostly about *understanding* things, which is necessary for analysis and 
     - [Add suppressable logging to see what’s going on.](#add-suppressable-logging-to-see-whats-going-on)
     - [Possible other approaches.](#possible-other-approaches)
   - [4.7. Quicksort of a singly linked list ⇒ “Complex-sort”.](#47-quicksort-of-a-singly-linked-list--complex-sort)
+- [5. Special techniques for singly linked lists.](#5-special-techniques-for-singly-linked-lists)
+  - [5.1. asd](#51-asd)
   - [](#)
 - [asd](#asd)
 
@@ -3590,6 +3592,17 @@ Quicksort results in seconds, for 58112 words:
 ~~~
 
 Quicksort’s roughly 0.036 seconds for sorting a linked list of 58 000+ shuffled words is not much worse than the recursive merge sort’s 0.033 seconds for the same task. Perhaps with smart optimizations applied, or some other scheme for choosing the pivot, Quicksort might even be faster than the recursive merge sort. However, for a linked list the Quicksort implementation is quite complex, with some crucial non-intuitive details.
+
+
+## 5. Special techniques for singly linked lists.
+
+Quicksort exemplified how it may be necessary to maintain a **pointer to the last node** in a list. For Quicksort this allowed O(1) constant time joining of sorted lists. But it has costs, including that any sequence of operations on a list must re-establish the pointer to last node before it’s just assumed and used by other code.
+
+Earlier, measuring the time of iterative merge sort on an already sorted list, with a timer with very low (like 0.02 seconds) resolution, exemplified that one may be forced to allocated and deallocate a large number of nodes, in our case about 1 425 408 000 nodes, namely 12 ⋅ 2048 ⋅ 58 000. There is a possibility that if the 2048 nodes from each of 11 first runs is instead reused in the next run, the human waiting for the timing results can be considerably reduced. To do that one can just move the nodes to a list of free-to-reuse nodes. Such a list is called [**free list**](https://en.wikipedia.org/wiki/Free_list) of nodes.
+
+Even earlier I referred, without description, to how one could use the so called **“cursor gap”** technique, a.k.a. a [“gap buffer”](https://en.wikipedia.org/wiki/Gap_buffer), to get the linked list characteristics of O(1) constant time insertion and deletion with an array such as `std::vector`. This isn’t directly a linked list technique but it’s very relevant to use of linked lists, because it removes an otherwise possible main reason to use linked lists. Unfortunately the standard library does not provide a cursor gap wrapper, like it provides `std::queue` and `std::stack` wrappers, or I could just refer you to the standard library. But let’s look at this first.
+
+### 5.1. asd
 
 
 
