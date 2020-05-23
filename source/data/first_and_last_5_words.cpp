@@ -1,23 +1,17 @@
 ﻿#include "english_words_iteration.hpp"
 #include "Abbreviated_list_displayer.hpp"
-using data::Abbreviated_list_displayer, data::for_each_english_word;
+using data::Abbreviated_list_displayer, data::for_each_english_word, data::n_english_words;
 
 #include <iostream>         // std::(cout, endl)
-#include <functional>       // std::invoke
-using std::cout, std::endl, std::invoke;
+using std::cout, std::endl;
 
 auto main()
     -> int
 {
-    const int n = invoke( []() -> int
-    {
-        int count = 0;
-        for_each_english_word( [&](auto) { ++count; } );
-        return count;
-    } );
-    
-    cout << n << " words:" << endl;
-    Abbreviated_list_displayer displayer( cout, n );
-    for_each_english_word( [&](auto word){ displayer.display( word ); } );
+    cout << n_english_words << " words:" << endl;
+    Abbreviated_list_displayer abbreviator( cout, n_english_words );
+    for_each_english_word( [&](auto word) {
+        abbreviator.display( word );
+        } );
     cout << "." << endl;
 }

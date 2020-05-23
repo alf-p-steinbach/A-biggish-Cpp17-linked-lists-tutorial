@@ -1,0 +1,7 @@
+bash -c "bash --init-file <(echo cd ~/x/source/techniques)"
+powershell -c "(Measure-Command {".\a.exe"}).TotalSeconds" 
+
+605.4754083 for 12 iterations
+405.4813493 fir 12 iterations with 1G free list
+211.3533132 for 12 iteration with 4G free list
+

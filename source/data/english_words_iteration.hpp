@@ -11,19 +11,20 @@ namespace data {
         const string_view&  s           = english_words;
         const int           s_length    = int( s.length() );
 
-        int i_wordstart = 0;
-        while( i_wordstart < s_length ) {
-            int i_wordend = i_wordstart + 1;
-            while( i_wordend < s_length and s[i_wordend] != '\n' ) {
-                ++i_wordend;
+        struct Word{ int i_start; int i_end; };
+        
+        Word word = {};
+        while( word.i_start < s_length ) {
+            word.i_end = word.i_start + 1;
+            while( word.i_end < s_length and s[word.i_end] != '\n' ) {
+                ++word.i_end;
             }
-            const int   word_length = i_wordend - i_wordstart;
-            const auto  word        = string_view( &s[i_wordstart], word_length );
+            const int   word_length = word.i_end - word.i_start;
+            const auto  word_view   = string_view( &s[word.i_start], word_length );
 
-            f( word );
+            f( word_view );
 
-            i_wordstart = i_wordend + 1;
+            word.i_start = word.i_end + 1;
         }
     }
-
 }  // namespace data

@@ -8,13 +8,11 @@ namespace data {
     // <url: http://www.mieliestronk.com/wordlist.html>.
     
     // Originally expressed as a single long string literal for the MinGW g++ compiler.
-    // But now using an array of `char` to work around Visual C++ 2019 error
-    // C2026 “string too big, trailing characters truncated”. It can only handle
-    // literal pieces each of < 16380 bytes. And then for the resulting string literal
-    // there is Visual C++ 2019 fatal error C2019 “string exceeds 65535 bytes in length”.
-    // These übersilly limits are out of the 1980’s. Argh.
+    // But now using an array of `char` to work around Visual C++ 2019 errors
+    // “string too big, trailing characters truncated” and “string exceeds 65535 bytes
+    // in length”. These limits seem to be unadjusted since the 1980’s.
 
-    inline extern const char english_words_literal[] =
+    inline extern constexpr char english_words_literal[] =
     {
         '\n',
         'a', 'a', 'r', 'd', 'v', 'a', 'r', 'k', '\n',
@@ -58136,5 +58134,24 @@ namespace data {
     constexpr auto english_words = string_view(
         english_words_literal + 1, sizeof( english_words_literal ) - 2
         );
+
+    inline auto count_the_english_words()
+        -> int
+    {
+        int count = 0;
+        for( const char ch: english_words ) {
+            count += (ch == '\n');
+        }
+        return count;
+    }
+    
+    const struct
+    {
+        operator int() const        // Lazy evaluation to pay only for what's used.
+        {
+            static int n = count_the_english_words();
+            return n;
+        }
+    } n_english_words;
 
 }  // namespace data

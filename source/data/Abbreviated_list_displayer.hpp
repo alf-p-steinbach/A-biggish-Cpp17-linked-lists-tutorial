@@ -14,11 +14,12 @@ namespace data {
     public:
         void display( const string_view& item )
         {
-            if( m_index < 5 or m_n_items - 5 <= m_index ) {
+            const int sub_size = 5;
+            if( m_index < sub_size or m_n_items - sub_size <= m_index ) {
                 if( m_index > 0 ) {
                     m_stream << ", ";
                 }
-                if( m_index == m_n_items - 5 ) {
+                if( m_n_items > 2*sub_size and m_index == m_n_items - sub_size ) {
                     m_stream << "..., ";
                 }
                 m_stream << item;

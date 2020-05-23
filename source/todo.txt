@@ -1,0 +1,1 @@
+Remove F() cast in (sorting_singly_linked\quicksort_result.adaptive_timing.cpp).
