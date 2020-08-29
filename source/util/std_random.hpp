@@ -139,6 +139,11 @@ namespace util::std_random {
             m_adapt( 0, n_unique_values - 1 )
         {}
 
+        explicit Integers_( const Integer first, const Integer last, const Seed seed = random_seed() ):
+            m_bits_generator( seed ),
+            m_adapt( first, last )
+        {}
+
         auto generator()
             -> Generator&
         { return m_bits_generator; }
@@ -154,6 +159,10 @@ namespace util::std_random {
         static auto from( Generator& g, const Integer n_unique_values )
             -> Integer
         { return uniform_int_distribution<Integer>( 0, n_unique_values - 1 )( g ); }
+
+        static auto from( Generator& g, const Integer first, const Integer last )
+            -> Integer
+        { return uniform_int_distribution<Integer>( first, last )( g ); }
     };
 
     template< class Number >        // For floating point numbers, e.g. `double`.
